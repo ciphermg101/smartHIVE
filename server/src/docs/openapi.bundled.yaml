@@ -1,0 +1,668 @@
+openapi: 3.0.3
+info:
+  title: SmartHive API
+  version: 1.0.0
+  description: API documentation for SmartHive
+servers:
+  - url: /api
+paths:
+  /apartments:
+    get:
+      tags: [Apartments]
+      summary: List all apartments
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of apartments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Apartment"
+    post:
+      tags: [Apartments]
+      summary: Create a new apartment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApartmentCreate"
+      responses:
+        "201":
+          description: Apartment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Apartment"
+  /apartments/{id}:
+    get:
+      tags: [Apartments]
+      summary: Get apartment by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Apartment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Apartment"
+    patch:
+      tags: [Apartments]
+      summary: Update apartment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApartmentUpdate"
+      responses:
+        "200":
+          description: Apartment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Apartment"
+    delete:
+      tags: [Apartments]
+      summary: Delete apartment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Apartment deleted
+  /units:
+    get:
+      tags: [Units]
+      summary: List all units
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Unit"
+    post:
+      tags: [Units]
+      summary: Create a new unit
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitCreate"
+      responses:
+        "201":
+          description: Unit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+  /units/{id}:
+    get:
+      tags: [Units]
+      summary: Get unit by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unit details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+    patch:
+      tags: [Units]
+      summary: Update unit
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnitUpdate"
+      responses:
+        "200":
+          description: Unit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Unit"
+    delete:
+      tags: [Units]
+      summary: Delete unit
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Unit deleted
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: List all tenants
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+  /tenants/invite:
+    post:
+      tags: [Tenants]
+      summary: Invite a tenant
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantInvite"
+      responses:
+        "201":
+          description: Tenant invite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteToken"
+  /tenants/accept-invite:
+    post:
+      tags: [Tenants]
+      summary: Accept a tenant invite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantAcceptInvite"
+      responses:
+        "200":
+          description: Invite accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+  /tenants/me:
+    get:
+      tags: [Tenants]
+      summary: Get current tenant details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+  /users:
+    get:
+      tags: [Users]
+      summary: List all users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: Update user role
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRoleUpdate"
+      responses:
+        "200":
+          description: User role updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /users/clerk-sync:
+    post:
+      tags: [Users]
+      summary: Clerk sync
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Clerk sync processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /issues:
+    get:
+      tags: [Issues]
+      summary: List all issues
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Issue"
+    post:
+      tags: [Issues]
+      summary: Report an issue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/IssueReport"
+      responses:
+        "201":
+          description: Issue reported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+  /issues/{id}/status:
+    patch:
+      tags: [Issues]
+      summary: Update issue status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueStatusUpdate"
+      responses:
+        "200":
+          description: Issue status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+  /rent:
+    get:
+      tags: [Rent]
+      summary: List all payments (landlord)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of all payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+  /rent/history:
+    get:
+      tags: [Rent]
+      summary: Get tenant payment history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Tenant payment history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+  /rent/simulate:
+    post:
+      tags: [Rent]
+      summary: Simulate a payment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentSimulate"
+      responses:
+        "201":
+          description: Payment simulated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+components:
+  schemas:
+    Apartment:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        landlordId:
+          type: string
+        units:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApartmentCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    ApartmentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    Unit:
+      type: object
+      properties:
+        id:
+          type: string
+        unitNo:
+          type: string
+        rent:
+          type: number
+        tenantId:
+          type: string
+          nullable: true
+        apartmentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UnitCreate:
+      type: object
+      required:
+        - unitNo
+        - rent
+        - apartmentId
+      properties:
+        unitNo:
+          type: string
+        rent:
+          type: number
+        apartmentId:
+          type: string
+    UnitUpdate:
+      type: object
+      properties:
+        unitNo:
+          type: string
+        rent:
+          type: number
+        tenantId:
+          type: string
+          nullable: true
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        apartmentId:
+          type: string
+        unitId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TenantInvite:
+      type: object
+      required:
+        - unitId
+      properties:
+        unitId:
+          type: string
+        expiration:
+          type: string
+          format: date-time
+          nullable: true
+    TenantAcceptInvite:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+    InviteToken:
+      type: object
+      properties:
+        token:
+          type: string
+        unitId:
+          type: string
+        expiration:
+          type: string
+          format: date-time
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        clerkUserId:
+          type: string
+        role:
+          type: string
+        apartmentId:
+          type: string
+        unitId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserRoleUpdate:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          enum: [landlord, tenant]
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        fileUrl:
+          type: string
+        status:
+          type: string
+        reporterId:
+          type: string
+        unitId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    IssueReport:
+      type: object
+      required:
+        - title
+        - description
+        - unitId
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        unitId:
+          type: string
+        file:
+          type: string
+          format: binary
+    IssueStatusUpdate:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [open, in_progress, resolved, ignored]
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+          format: date-time
+        status:
+          type: string
+        tenantId:
+          type: string
+        unitId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaymentSimulate:
+      type: object
+      required:
+        - unitId
+        - amount
+      properties:
+        unitId:
+          type: string
+        amount:
+          type: number

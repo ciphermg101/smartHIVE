@@ -1,0 +1,239 @@
+Apartment:
+  type: object
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    landlordId:
+      type: string
+    units:
+      type: array
+      items:
+        type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+ApartmentCreate:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+ApartmentUpdate:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+Unit:
+  type: object
+  properties:
+    id:
+      type: string
+    unitNo:
+      type: string
+    rent:
+      type: number
+    tenantId:
+      type: string
+      nullable: true
+    apartmentId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+UnitCreate:
+  type: object
+  required:
+    - unitNo
+    - rent
+    - apartmentId
+  properties:
+    unitNo:
+      type: string
+    rent:
+      type: number
+    apartmentId:
+      type: string
+UnitUpdate:
+  type: object
+  properties:
+    unitNo:
+      type: string
+    rent:
+      type: number
+    tenantId:
+      type: string
+      nullable: true
+Tenant:
+  type: object
+  properties:
+    id:
+      type: string
+    userId:
+      type: string
+    apartmentId:
+      type: string
+    unitId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+TenantInvite:
+  type: object
+  required:
+    - unitId
+  properties:
+    unitId:
+      type: string
+    expiration:
+      type: string
+      format: date-time
+      nullable: true
+TenantAcceptInvite:
+  type: object
+  required:
+    - token
+  properties:
+    token:
+      type: string
+InviteToken:
+  type: object
+  properties:
+    token:
+      type: string
+    unitId:
+      type: string
+    expiration:
+      type: string
+      format: date-time
+    status:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+User:
+  type: object
+  properties:
+    id:
+      type: string
+    clerkUserId:
+      type: string
+    role:
+      type: string
+    apartmentId:
+      type: string
+    unitId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+UserRoleUpdate:
+  type: object
+  required:
+    - role
+  properties:
+    role:
+      type: string
+      enum: [landlord, tenant]
+Issue:
+  type: object
+  properties:
+    id:
+      type: string
+    title:
+      type: string
+    description:
+      type: string
+    fileUrl:
+      type: string
+    status:
+      type: string
+    reporterId:
+      type: string
+    unitId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+IssueReport:
+  type: object
+  required:
+    - title
+    - description
+    - unitId
+  properties:
+    title:
+      type: string
+    description:
+      type: string
+    unitId:
+      type: string
+    file:
+      type: string
+      format: binary
+IssueStatusUpdate:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: string
+      enum: [open, in_progress, resolved, ignored]
+Payment:
+  type: object
+  properties:
+    id:
+      type: string
+    amount:
+      type: number
+    date:
+      type: string
+      format: date-time
+    status:
+      type: string
+    tenantId:
+      type: string
+    unitId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+PaymentSimulate:
+  type: object
+  required:
+    - unitId
+    - amount
+  properties:
+    unitId:
+      type: string
+    amount:
+      type: number 
