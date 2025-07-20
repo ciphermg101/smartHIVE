@@ -26,7 +26,7 @@ export function requireOwnership(type: 'apartment' | 'unit') {
         if (!apartment) {
           return res.status(404).json({ success: false, message: 'Apartment not found' });
         }
-        if (String(apartment.landlordId) !== String(userId)) {
+        if (String(apartment.ownerId) !== String(userId)) {
           return res.status(403).json({ success: false, message: 'Forbidden: Not the owner of this apartment' });
         }
         return next();
@@ -40,10 +40,10 @@ export function requireOwnership(type: 'apartment' | 'unit') {
         if (!unit) {
           return res.status(404).json({ success: false, message: 'Unit not found' });
         }
-        // Check if user is landlord of the apartment or tenant of the unit
+        // Check if user is owner of the apartment or tenant of the unit
         const apartment = await Apartment.findById(unit.apartmentId).lean();
         if (
-          (apartment && String(apartment.landlordId) === String(userId)) ||
+          (apartment && String(apartment.ownerId) === String(userId)) ||
           (unit.tenantId && String(unit.tenantId) === String(userId))
         ) {
           return next();

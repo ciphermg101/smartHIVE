@@ -21,7 +21,7 @@ const updateApartmentSchema = z.object({
 router.post(
   '/',
   requireAuth,
-  requireRole('landlord'),
+  requireRole('owner'),
   zodValidate({ body: createApartmentSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,7 +29,9 @@ router.post(
       const apartment = await ApartmentService.create({
         name: req.body.name,
         description: req.body.description,
-        landlordId: auth.userId || '',
+        location: req.body.location,
+        imageUrl: req.body.imageUrl,
+        ownerId: auth.userId || '',
       });
       res.status(201).json({ success: true, message: 'Apartment created', data: apartment });
     } catch (err) {
@@ -41,11 +43,11 @@ router.post(
 router.get(
   '/',
   requireAuth,
-  requireRole('landlord'),
+  requireRole('owner'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = getAuth(req);
-      const apartments = await ApartmentService.listByLandlord(auth.userId || '');
+      const apartments = await ApartmentService.listByOwner(auth.userId || '');
       res.json({ success: true, data: apartments });
     } catch (err) {
       next(err);
@@ -56,7 +58,7 @@ router.get(
 router.get(
   '/:id',
   requireAuth,
-  requireRole(['landlord', 'tenant']),
+  requireRole(['owner', 'tenant']),
   requireOwnership('apartment'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -72,7 +74,7 @@ router.get(
 router.patch(
   '/:id',
   requireAuth,
-  requireRole('landlord'),
+  requireRole('owner'),
   requireOwnership('apartment'),
   zodValidate({ body: updateApartmentSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -89,7 +91,7 @@ router.patch(
 router.delete(
   '/:id',
   requireAuth,
-  requireRole('landlord'),
+  requireRole('owner'),
   requireOwnership('apartment'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

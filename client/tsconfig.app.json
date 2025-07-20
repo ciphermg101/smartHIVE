@@ -35,7 +35,8 @@
       "@lib/*": ["./src/lib/*"],
       "@layouts/*": ["./src/layouts/*"],
       "@pages/*": ["./src/pages/*"],
-      "@assets/*": ["./src/assets/*"]
+      "@assets/*": ["./src/assets/*"],
+      "@interfaces/*": ["interfaces/*"]
     },
   },
   "include": ["src"]

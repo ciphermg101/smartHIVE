@@ -11,7 +11,7 @@ export interface ClerkWebhookPayload {
 
 function getRoleFromMetadata(data: Record<string, unknown>): UserRole {
   const role = (data.publicMetadata as { role?: string } | undefined)?.role;
-  if (role === UserRole.LANDLORD || role === UserRole.TENANT) return role;
+  if (role === UserRole.OWNER || role === UserRole.TENANT || role === UserRole.CARETAKER) return role;
   return UserRole.TENANT;
 }
 

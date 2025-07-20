@@ -10,6 +10,7 @@ const SignIn = lazy(() => import('@pages/SignIn'))
 const SignUp = lazy(() => import('@pages/SignUp'))
 const UserProfile = lazy(() => import('@pages/UserProfile'))
 const Unauthorized = lazy(() => import('@pages/Unauthorized'))
+const Onboarding = lazy(() => import('@pages/Onboarding'))
 
 function App() {
   return (
@@ -17,13 +18,18 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
           <Routes>
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <Home />
               </ProtectedRoute>
             } />
-            <Route path="/sign-in/*" element={<SignIn />} />
-            <Route path="/sign-up/*" element={<SignUp />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
             <Route path="/user" element={<UserProfile />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             {/* TODO: Add more protected routes for features, e.g. landlord/tenant dashboards */}

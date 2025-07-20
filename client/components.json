@@ -20,7 +20,8 @@
     "lib": "@lib",
     "layouts": "@layouts",
     "pages": "@pages",
-    "assets": "@assets"
+    "assets": "@assets",
+    "interfaces": "@interfaces"
   },
   "iconLibrary": "lucide"
 }
