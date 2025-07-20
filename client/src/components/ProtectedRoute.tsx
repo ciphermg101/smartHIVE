@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useProtectedRoute } from '@hooks/useProtectedRoute'
 
 interface ProtectedRouteProps {

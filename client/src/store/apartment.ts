@@ -1,14 +1,16 @@
 import { create } from 'zustand'
-import type { Apartment } from '@/interfaces/apartments'
+import type { ApartmentProfile } from '@/store/user'
 
 interface ApartmentState {
-  selectedApartment: Apartment | null
-  setSelectedApartment: (apartment: Apartment) => void
-  clearSelectedApartment: () => void
+  selectedApartment: string | null
+  selectedProfile: ApartmentProfile | null
+  setSelectedApartment: (id: string | null) => void
+  setSelectedProfile: (profile: ApartmentProfile | null) => void
 }
 
 export const useApartmentStore = create<ApartmentState>((set) => ({
   selectedApartment: null,
-  setSelectedApartment: (apartment) => set({ selectedApartment: apartment }),
-  clearSelectedApartment: () => set({ selectedApartment: null }),
+  selectedProfile: null,
+  setSelectedApartment: (id) => set({ selectedApartment: id }),
+  setSelectedProfile: (profile) => set({ selectedProfile: profile }),
 })) 

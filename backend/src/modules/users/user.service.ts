@@ -1,7 +1,4 @@
 import { User, IUser } from '@modules/users/user.model';
-import { Types } from 'mongoose';
-import { ValidationError } from '@common/error-handler/CustomErrors';
-import { UserRole } from '@modules/users/user.enum';
 
 export interface ClerkWebhookPayload {
   object: string;
@@ -9,61 +6,46 @@ export interface ClerkWebhookPayload {
   data: Record<string, unknown>;
 }
 
-function getRoleFromMetadata(data: Record<string, unknown>): UserRole {
-  const role = (data.publicMetadata as { role?: string } | undefined)?.role;
-  if (role === UserRole.OWNER || role === UserRole.TENANT || role === UserRole.CARETAKER) return role;
-  return UserRole.TENANT;
-}
-
 export class UserService {
   static async getMe(clerkUserId: string): Promise<IUser | null> {
+    try {
     return User.findOne({ clerkUserId }).lean();
+    } catch (err) {
+      throw err;
+    }
   }
 
   static async listUsers(): Promise<IUser[]> {
+    try {
     return User.find({}).lean();
+    } catch (err) {
+      throw err;
+  }
   }
 
-  static async updateRole(id: string, role: UserRole): Promise<IUser | null> {
-    if (!Types.ObjectId.isValid(id)) throw new ValidationError('Invalid user id');
-    return User.findByIdAndUpdate(id, { role }, { new: true }).lean();
-  }
-
-  static async clerkSync(payload: ClerkWebhookPayload): Promise<{ success: boolean }> {
+  static async clerkSync(payload: any): Promise<{ success: boolean }> {
+    try {
     const { type, data } = payload;
     const clerkUserId = data.id as string;
-    if (!clerkUserId) throw new ValidationError('Missing Clerk user id');
-    switch (type) {
-      case 'user.created': {
-        const role = getRoleFromMetadata(data);
-        await User.create({
-          clerkUserId,
-          role,
-          apartmentId: data.apartmentId ? new Types.ObjectId(data.apartmentId as string) : undefined,
-          unitId: data.unitId ? new Types.ObjectId(data.unitId as string) : undefined,
-        });
-        break;
-      }
-      case 'user.updated': {
-        const role = getRoleFromMetadata(data);
+      const email = data.email as string;
+      if (!clerkUserId) throw Object.assign(new Error('Missing Clerk user id'), { status: 400 });
+      if (!email) throw Object.assign(new Error('Missing Clerk user email'), { status: 400 });
+      if (type === 'user.created') {
+        await User.create({ clerkUserId, email });
+      } else if (type === 'user.updated') {
         await User.findOneAndUpdate(
           { clerkUserId },
-          {
-            role,
-            apartmentId: data.apartmentId ? new Types.ObjectId(data.apartmentId as string) : undefined,
-            unitId: data.unitId ? new Types.ObjectId(data.unitId as string) : undefined,
-          },
+          { email },
           { new: true }
         );
-        break;
-      }
-      case 'user.deleted': {
+      } else if (type === 'user.deleted') {
         await User.findOneAndDelete({ clerkUserId });
-        break;
+      } else {
+        throw Object.assign(new Error('Unsupported Clerk webhook event type'), { status: 400 });
       }
-      default:
-        throw new ValidationError('Unsupported Clerk webhook event type');
+      return { success: true };
+    } catch (err) {
+      throw err;
     }
-    return { success: true };
   }
 } 

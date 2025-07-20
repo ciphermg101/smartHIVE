@@ -13,7 +13,6 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@docs/swagger';
 import { apartmentRouter } from '@modules/apartments';
 import { unitRouter } from '@modules/units';
-import { tenantRouter } from '@modules/tenants';
 import { paymentRouter } from '@modules/rent';
 import { issueRouter } from '@modules/issues';
 import { userRouter } from '@modules/users';
@@ -25,7 +24,10 @@ app.use(clerkMiddleware())
 
 // Security
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN,
+  credentials: true,
+}));
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -46,7 +48,6 @@ connectDB();
 // Register modules/routes here
 app.use('/api/v1/apartments', apartmentRouter);
 app.use('/api/v1/units', unitRouter);
-app.use('/api/v1/tenants', tenantRouter);
 app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/issues', issueRouter);
 app.use('/api/v1/users', userRouter);

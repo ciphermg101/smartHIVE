@@ -1,7 +1,7 @@
 Apartment:
   type: object
   properties:
-    id:
+    _id:
       type: string
     name:
       type: string
@@ -13,14 +13,17 @@ Apartment:
       type: string
     ownerId:
       type: string
+      description: Clerk user ID of the owner
     caretakers:
       type: array
       items:
         type: string
+      description: Array of Clerk user IDs
     tenants:
       type: array
       items:
         type: string
+      description: Array of Clerk user IDs
     units:
       type: array
       items:
@@ -62,7 +65,7 @@ ApartmentUpdate:
 Unit:
   type: object
   properties:
-    id:
+    _id:
       type: string
     unitNo:
       type: string
@@ -70,8 +73,10 @@ Unit:
       type: number
     tenantId:
       type: string
-      nullable: true
+      description: Clerk user ID of the tenant
     apartmentId:
+      type: string
+    status:
       type: string
     createdAt:
       type: string
@@ -105,7 +110,7 @@ UnitUpdate:
 Tenant:
   type: object
   properties:
-    id:
+    _id:
       type: string
     userId:
       type: string
@@ -163,15 +168,12 @@ InviteToken:
 User:
   type: object
   properties:
-    id:
+    _id:
       type: string
     clerkUserId:
       type: string
-    role:
-      type: string
-    apartmentId:
-      type: string
-    unitId:
+      description: Clerk user ID
+    email:
       type: string
     createdAt:
       type: string
@@ -190,7 +192,7 @@ UserRoleUpdate:
 Issue:
   type: object
   properties:
-    id:
+    _id:
       type: string
     title:
       type: string
@@ -202,6 +204,7 @@ Issue:
       type: string
     reporterId:
       type: string
+      description: Clerk user ID of the reporter
     unitId:
       type: string
     createdAt:
@@ -237,7 +240,7 @@ IssueStatusUpdate:
 Payment:
   type: object
   properties:
-    id:
+    _id:
       type: string
     amount:
       type: number
@@ -248,6 +251,7 @@ Payment:
       type: string
     tenantId:
       type: string
+      description: Clerk user ID of the tenant
     unitId:
       type: string
     createdAt:

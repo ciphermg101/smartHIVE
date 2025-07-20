@@ -4,7 +4,7 @@ import { UnitStatus } from '@modules/units/unit.enum';
 export interface IUnit extends Document {
   unitNo: string;
   rent: number;
-  tenantId?: Types.ObjectId | null;
+  tenantId?: string | null;
   apartmentId: Types.ObjectId;
   status: UnitStatus;
   createdAt: Date;
@@ -14,7 +14,7 @@ export interface IUnit extends Document {
 const unitSchema = new Schema<IUnit>({
   unitNo: { type: String, required: true },
   rent: { type: Number, required: true },
-  tenantId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  tenantId: { type: String, default: null },
   apartmentId: { type: Schema.Types.ObjectId, ref: 'Apartment', required: true },
   status: {
     type: String,

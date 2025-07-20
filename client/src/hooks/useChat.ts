@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import axios from 'axios'
+import api from '@/lib/axios'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from '@clerk/clerk-react'
 
@@ -11,7 +11,7 @@ export function useChatMessages(room: string) {
   return useQuery({
     queryKey: ['chatMessages', room],
     queryFn: async () => {
-      const { data } = await axios.get(`${API}/messages`, { params: { room } })
+      const { data } = await api.get(`${API}/messages`, { params: { room } })
       return data.data
     },
     enabled: !!room,

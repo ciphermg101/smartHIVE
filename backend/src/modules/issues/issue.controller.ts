@@ -1,12 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { requireAuth, getAuth } from '@common/middleware/clerkAuth';
-import { requireRole } from '@common/guards/roleGuard';
+import { authGuard } from '@common/guards/authGuard';
 import { zodValidate } from '@utils/zodValidate';
-import { upload } from '@common/middleware/upload';
 import { IssueService } from '@modules/issues/issue.service';
 import { IssueStatus } from '@modules/issues/issue.enum';
-import { requireOwnership } from '@common/guards/ownershipGuard';
+import { rolesGuard } from '@common/guards/rolesGuard';
 
 const router = Router();
 
@@ -14,27 +12,29 @@ const reportIssueSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   unitId: z.string().min(1),
+  apartmentProfileId: z.string().min(1),
+  imageUrl: z.string().url().optional(),
 });
 
 const updateStatusSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'ignored']),
+  apartmentProfileId: z.string().min(1),
 });
 
 router.post(
   '/',
-  requireAuth,
-  requireRole('tenant'),
-  upload.single('file'),
+  authGuard,
+  rolesGuard({ roles: 'tenant' }),
+  zodValidate({ body: reportIssueSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
-    const auth = getAuth(req);
     try {
-      reportIssueSchema.parse(req.body);
-      const fileUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+      const profile = (req as any).apartmentProfile;
+      const fileUrl = req.body.imageUrl;
       const issue = await IssueService.reportIssue({
         title: req.body.title,
         description: req.body.description,
         unitId: req.body.unitId,
-        reporterId: auth.userId || '',
+        reporterId: profile.userId,
         fileUrl,
       });
       res.status(201).json({ success: true, message: 'Issue reported', data: issue });
@@ -46,18 +46,13 @@ router.post(
 
 router.get(
   '/',
-  requireAuth,
-  requireRole(['landlord', 'tenant']),
+  authGuard,
+  rolesGuard({ roles: ['owner', 'caretaker', 'tenant'] }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const auth = getAuth(req);
-      // Type guard for role extraction
-      let role = '';
-      if (auth.sessionClaims && typeof auth.sessionClaims === 'object' && 'publicMetadata' in auth.sessionClaims) {
-        const pm = (auth.sessionClaims as { publicMetadata?: { role?: string } }).publicMetadata;
-        role = pm?.role || '';
-      }
-      const issues = await IssueService.listIssues({ userId: auth.userId || '', role });
+      const profile = (req as any).apartmentProfile;
+      const apartmentId = profile.apartmentId;
+      const issues = await IssueService.listIssues({ apartmentId, userId: profile.userId, role: profile.role });
       res.json({ success: true, data: issues });
     } catch (err) {
       next(err);
@@ -67,9 +62,8 @@ router.get(
 
 router.patch(
   '/:id/status',
-  requireAuth,
-  requireRole('landlord'),
-  requireOwnership('unit'),
+  authGuard,
+  rolesGuard({ roles: ['owner', 'caretaker'] }),
   zodValidate({ body: updateStatusSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

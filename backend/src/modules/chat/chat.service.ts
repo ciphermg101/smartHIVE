@@ -1,10 +1,9 @@
 import { Message, IMessage } from '@modules/chat/message.model';
 import { Types } from 'mongoose';
-import { ValidationError } from '@common/error-handler/CustomErrors';
 
 export class ChatService {
   static async sendMessage(data: { senderId: string; room: string; content: string; apartmentId?: string; unitId?: string }): Promise<IMessage> {
-    if (!data.room || !data.content) throw new ValidationError('Room and content are required');
+    if (!data.room || !data.content) throw Object.assign(new Error('Room and content are required'), { status: 400 });
     const message = await Message.create({
       senderId: new Types.ObjectId(data.senderId),
       apartmentId: data.apartmentId ? new Types.ObjectId(data.apartmentId) : undefined,
@@ -16,7 +15,7 @@ export class ChatService {
   }
 
   static async getMessages(room: string): Promise<IMessage[]> {
-    if (!room) throw new ValidationError('Room is required');
+    if (!room) throw Object.assign(new Error('Room is required'), { status: 400 });
     return Message.find({ room }).sort({ createdAt: 1 }).lean();
   }
 } 

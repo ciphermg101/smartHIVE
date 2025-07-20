@@ -16,6 +16,8 @@
   post:
     tags: [Apartments]
     summary: Create a new apartment
+    description: |
+      Create a new apartment. Any authenticated user can create an apartment. No owner role is required for this action.
     security:
       - bearerAuth: []
     requestBody:
@@ -34,12 +36,14 @@
 /apartments/my:
   get:
     tags: [Apartments]
-    summary: List apartments for onboarding (by user role)
+    summary: List all apartments for the current user
+    description: |
+      Returns all apartments associated with the authenticated user (via ApartmentProfiles). Does not require apartmentProfileId.
     security:
       - bearerAuth: []
     responses:
       '200':
-        description: List of apartments for onboarding
+        description: List of apartments for the current user
         content:
           application/json:
             schema:

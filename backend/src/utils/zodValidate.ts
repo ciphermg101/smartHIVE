@@ -19,7 +19,10 @@ export function zodValidate<T = any, Q extends ParsedQs = ParsedQs, P extends Pa
       if (schemas.params) req.params = schemas.params.parse(req.params);
       next();
     } catch (err) {
-      next(err instanceof ZodError ? err : new Error('Validation failed'));
+      if (err instanceof ZodError) {
+        return next(Object.assign(new Error('Validation failed'), { status: 400, error: err.issues }));
+      }
+      next(err);
     }
   };
 }

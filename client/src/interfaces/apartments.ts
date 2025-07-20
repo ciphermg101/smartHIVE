@@ -1,9 +1,9 @@
 export interface Apartment {
-  id: string
-  name: string
-  description?: string
-  location: string
-  imageUrl?: string
+  _id: string;
+  name: string;
+  description?: string;
+  location: string;
+  imageUrl?: string;
 }
 
 export interface ApartmentForm {

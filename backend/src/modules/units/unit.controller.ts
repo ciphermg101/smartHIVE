@@ -1,9 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { requireAuth, getAuth } from '@common/middleware/clerkAuth';
-import { requireRole } from '@common/guards/roleGuard';
+import { authGuard } from '@common/guards/authGuard';
+import { rolesGuard } from '@common/guards/rolesGuard';
 import { zodValidate } from '@utils/zodValidate';
-import { requireOwnership } from '@common/guards/ownershipGuard';
 import { UnitService } from '@modules/units/unit.service';
 
 const router = Router();
@@ -22,8 +21,8 @@ const updateUnitSchema = z.object({
 
 router.post(
   '/',
-  requireAuth,
-  requireRole('landlord'),
+  authGuard,
+  rolesGuard({ roles: 'owner' }),
   zodValidate({ body: createUnitSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -41,9 +40,8 @@ router.post(
 
 router.get(
   '/',
-  requireAuth,
-  requireRole(['landlord', 'tenant']),
-  requireOwnership('apartment'),
+  authGuard,
+  rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const apartmentId = req.query.apartmentId as string || req.body.apartmentId || req.params.apartmentId;
@@ -57,9 +55,8 @@ router.get(
 
 router.get(
   '/:id',
-  requireAuth,
-  requireRole(['landlord', 'tenant']),
-  requireOwnership('unit'),
+  authGuard,
+  rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'unit' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unit = await UnitService.getById(req.params.id || '');
@@ -73,9 +70,8 @@ router.get(
 
 router.patch(
   '/:id',
-  requireAuth,
-  requireRole('landlord'),
-  requireOwnership('unit'),
+  authGuard,
+  rolesGuard({ roles: 'owner', resourceType: 'unit' }),
   zodValidate({ body: updateUnitSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -90,9 +86,8 @@ router.patch(
 
 router.delete(
   '/:id',
-  requireAuth,
-  requireRole('landlord'),
-  requireOwnership('unit'),
+  authGuard,
+  rolesGuard({ roles: 'owner', resourceType: 'unit' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await UnitService.delete(req.params.id || '');

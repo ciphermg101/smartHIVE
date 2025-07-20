@@ -1,9 +1,9 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IMessage extends Document {
-  senderId: Types.ObjectId | string;
-  apartmentId?: Types.ObjectId | string;
-  unitId?: Types.ObjectId | string;
+  senderId: string;
+  apartmentId?: string;
+  unitId?: string;
   content: string;
   room: string;
   createdAt: Date;
@@ -11,9 +11,9 @@ export interface IMessage extends Document {
 }
 
 const messageSchema = new Schema<IMessage>({
-  senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  apartmentId: { type: Schema.Types.ObjectId, ref: 'Apartment' },
-  unitId: { type: Schema.Types.ObjectId, ref: 'Unit' },
+  senderId: { type: String, required: true },
+  apartmentId: { type: String },
+  unitId: { type: String },
   content: { type: String, required: true },
   room: { type: String, required: true },
 }, { timestamps: true });

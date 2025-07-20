@@ -1,37 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
+import api from '@/lib/axios'
 
 const API = '/api/v1/issues'
 
-export function useIssues() {
+export function useIssues(apartmentProfileId: string) {
   return useQuery({
-    queryKey: ['issues'],
+    queryKey: ['issues', apartmentProfileId],
     queryFn: async () => {
-      const { data } = await axios.get(API)
+      const { data } = await api.get(API, { params: { apartmentProfileId } })
       return data.data
     },
+    enabled: !!apartmentProfileId,
   })
 }
 
-export function useReportIssue() {
+export function useReportIssue(apartmentProfileId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { title: string; description: string; unitId: string; file?: File }) => {
-      const formData = new FormData()
-      formData.append('title', payload.title)
-      formData.append('description', payload.description)
-      formData.append('unitId', payload.unitId)
-      if (payload.file) formData.append('file', payload.file)
-      return axios.post(API, formData)
+    mutationFn: (payload: { title: string; description: string; unitId: string; imageUrl?: string }) => {
+      return api.post(API, { ...payload, apartmentProfileId })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issues'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issues', apartmentProfileId] })
   })
 }
 
-export function useUpdateIssueStatus() {
+export function useUpdateIssueStatus(apartmentProfileId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => axios.patch(`${API}/${id}/status`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issues'] })
+    mutationFn: ({ id, status }: { id: string; status: string }) => api.patch(`${API}/${id}/status`, { status, apartmentProfileId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['issues', apartmentProfileId] })
   })
 } 

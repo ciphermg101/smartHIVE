@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { requireAuth, getAuth } from '@common/middleware/clerkAuth';
-import { requireRole } from '@common/guards/roleGuard';
+import { getAuth } from '@common/middleware/clerkAuth';
+import { authGuard } from '@common/guards/authGuard';
+import { rolesGuard } from '@common/guards/rolesGuard';
 import { zodValidate } from '@utils/zodValidate';
 import { PaymentService } from '@modules/rent/payment.service';
-import { requireOwnership } from '@common/guards/ownershipGuard';
 
 const router = Router();
 
@@ -15,9 +15,8 @@ const simulatePaymentSchema = z.object({
 
 router.post(
   '/simulate',
-  requireAuth,
-  requireRole('tenant'),
-  requireOwnership('unit'),
+  authGuard,
+  rolesGuard({ roles: 'tenant', resourceType: 'unit' }),
   zodValidate({ body: simulatePaymentSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -35,27 +34,14 @@ router.post(
 );
 
 router.get(
-  '/history',
-  requireAuth,
-  requireRole('tenant'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const auth = getAuth(req);
-      const payments = await PaymentService.getTenantHistory(auth.userId || '');
-      res.json({ success: true, data: payments });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-router.get(
   '/',
-  requireAuth,
-  requireRole('landlord'),
+  authGuard,
+  rolesGuard({ roles: ['owner', 'caretaker', 'tenant'] }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const payments = await PaymentService.listAllPayments();
+      const profile = (req as any).apartmentProfile;
+      const apartmentId = profile.apartmentId;
+      const payments = await PaymentService.getPayments({ apartmentId, userId: profile.userId, role: profile.role });
       res.json({ success: true, data: payments });
     } catch (err) {
       next(err);

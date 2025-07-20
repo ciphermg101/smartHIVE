@@ -6,8 +6,8 @@ export interface IIssue extends Document {
   description: string;
   fileUrl?: string;
   status: IssueStatus;
-  reporterId: Types.ObjectId;
-  unitId: Types.ObjectId;
+  reporterId: string;
+  unitId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,8 +17,8 @@ const issueSchema = new Schema<IIssue>({
   description: { type: String, required: true },
   fileUrl: { type: String },
   status: { type: String, enum: Object.values(IssueStatus), default: IssueStatus.OPEN },
-  reporterId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  unitId: { type: Schema.Types.ObjectId, ref: 'Unit', required: true },
+  reporterId: { type: String, required: true },
+  unitId: { type: String, required: true },
 }, { timestamps: true });
 
 export const Issue = model<IIssue>('Issue', issueSchema); 

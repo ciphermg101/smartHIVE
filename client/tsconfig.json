@@ -9,7 +9,6 @@
     "paths": {
       "@/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
-      "@features/*": ["./src/features/*"],
       "@types/*": ["./src/types/*"],
       "@store/*": ["./src/store/*"],
       "@hooks/*": ["./src/hooks/*"],

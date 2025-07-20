@@ -5,9 +5,9 @@ export interface IApartment extends Document {
   description?: string;
   location: string;
   imageUrl?: string;
-  ownerId: Types.ObjectId;
-  caretakers: Types.ObjectId[];
-  tenants: Types.ObjectId[];
+  ownerId: string;
+  caretakers: string[];
+  tenants: string[];
   units: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -18,9 +18,9 @@ const apartmentSchema = new Schema<IApartment>({
   description: { type: String },
   location: { type: String, required: true },
   imageUrl: { type: String },
-  ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  caretakers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  tenants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  ownerId: { type: String, required: true },
+  caretakers: [{ type: String }],
+  tenants: [{ type: String }],
   units: [{ type: Schema.Types.ObjectId, ref: 'Unit' }],
 }, { timestamps: true });
 
