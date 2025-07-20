@@ -7,8 +7,20 @@ Apartment:
       type: string
     description:
       type: string
-    landlordId:
+    location:
       type: string
+    imageUrl:
+      type: string
+    ownerId:
+      type: string
+    caretakers:
+      type: array
+      items:
+        type: string
+    tenants:
+      type: array
+      items:
+        type: string
     units:
       type: array
       items:
@@ -23,10 +35,18 @@ ApartmentCreate:
   type: object
   required:
     - name
+    - location
+    - ownerId
   properties:
     name:
       type: string
     description:
+      type: string
+    location:
+      type: string
+    imageUrl:
+      type: string
+    ownerId:
       type: string
 ApartmentUpdate:
   type: object
@@ -34,6 +54,10 @@ ApartmentUpdate:
     name:
       type: string
     description:
+      type: string
+    location:
+      type: string
+    imageUrl:
       type: string
 Unit:
   type: object
@@ -120,6 +144,11 @@ InviteToken:
       type: string
     unitId:
       type: string
+    apartmentId:
+      type: string
+    role:
+      type: string
+      enum: [tenant, caretaker]
     expiration:
       type: string
       format: date-time

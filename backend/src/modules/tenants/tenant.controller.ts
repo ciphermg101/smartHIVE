@@ -5,11 +5,14 @@ import { requireRole } from '@common/guards/roleGuard';
 import { zodValidate } from '@utils/zodValidate';
 import { TenantService } from '@modules/tenants/tenant.service';
 import { requireOwnership } from '@common/guards/ownershipGuard';
+import { ApartmentService } from '@modules/apartments/apartment.service';
 
 const router = Router();
 
-const inviteTenantSchema = z.object({
-  unitId: z.string().min(1),
+const inviteSchema = z.object({
+  unitId: z.string().optional(),
+  apartmentId: z.string().optional(),
+  role: z.enum(['tenant', 'caretaker']),
   expiration: z.date().optional(),
 });
 
@@ -20,16 +23,12 @@ const acceptInviteSchema = z.object({
 router.post(
   '/invite',
   requireAuth,
-  requireRole('landlord'),
-  requireOwnership('unit'),
-  zodValidate({ body: inviteTenantSchema }),
+  requireRole('owner'),
+  zodValidate({ body: inviteSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const invite = await TenantService.inviteTenant({
-        unitId: req.body.unitId,
-        expiration: req.body.expiration,
-      });
-      res.status(201).json({ success: true, message: 'Tenant invite created', data: invite });
+      const invite = await TenantService.invite(req.body);
+      res.status(201).json({ success: true, message: 'Invite created', data: invite });
     } catch (err) {
       next(err);
     }
@@ -39,13 +38,12 @@ router.post(
 router.post(
   '/accept-invite',
   requireAuth,
-  requireRole('tenant'),
   zodValidate({ body: acceptInviteSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = getAuth(req);
-      const tenant = await TenantService.acceptInvite(req.body.token, auth.userId || '');
-      res.json({ success: true, message: 'Invite accepted', data: tenant });
+      const result = await TenantService.acceptInvite(req.body.token, auth.userId || '');
+      res.json({ success: true, message: 'Invite accepted', data: result });
     } catch (err) {
       next(err);
     }
@@ -53,29 +51,14 @@ router.post(
 );
 
 router.get(
-  '/me',
+  '/my-apartments',
   requireAuth,
-  requireRole('tenant'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = getAuth(req);
-      const tenant = await TenantService.getMyDetails(auth.userId || '');
-      if (!tenant) return res.status(404).json({ success: false, message: 'Tenant details not found' });
-      res.json({ success: true, data: tenant });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-router.get(
-  '/',
-  requireAuth,
-  requireRole('landlord'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const tenants = await TenantService.listTenants();
-      res.json({ success: true, data: tenants });
+      const role = (auth.sessionClaims as any)?.publicMetadata?.role;
+      const apartments = await ApartmentService.listByUserRole(auth.userId || '', role);
+      res.json({ success: true, data: apartments });
     } catch (err) {
       next(err);
     }
