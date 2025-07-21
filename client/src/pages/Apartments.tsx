@@ -4,6 +4,7 @@ import { Button } from '@components/ui/button'
 import { Skeleton } from '@components/ui/skeleton'
 import { useUserStore } from '@/store/user'
 import { useApartmentStore } from '@/store/apartment'
+import { ThemeToggle } from '@components/ui/ThemeToggle'
 
 interface Apartment {
   id: string
@@ -31,7 +32,10 @@ export default function ApartmentsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-10">
+    <div className="max-w-2xl mx-auto py-10 bg-background text-foreground min-h-screen">
+      <div className="flex justify-end mb-4">
+        <ThemeToggle />
+      </div>
       <h1 className="text-2xl font-bold mb-6">Select Apartment</h1>
       <div className="flex flex-col gap-4">
         {isLoading ? (
@@ -42,10 +46,10 @@ export default function ApartmentsPage() {
           apartments.map((apartment) => (
             <Card
               key={apartment.id}
-              className={`flex flex-col md:flex-row items-center justify-between p-4 border-2 ${selectedApartment === apartment.id ? 'border-primary' : 'border-transparent'}`}
+              className={`flex flex-col md:flex-row items-center justify-between p-4 border-2 bg-card dark:bg-zinc-900 border-border ${selectedApartment === apartment.id ? 'border-primary' : 'border-transparent'}`}
             >
               <CardHeader className="flex-1">
-                <h2 className="font-semibold text-lg">{apartment.name}</h2>
+                <h2 className="font-semibold text-lg text-foreground">{apartment.name}</h2>
                 <p className="text-muted-foreground text-sm">{apartment.description}</p>
                 <p className="text-xs mt-1">Role: <span className="font-semibold">{apartment.profile?.role || 'N/A'}</span></p>
               </CardHeader>
@@ -64,7 +68,7 @@ export default function ApartmentsPage() {
         )}
       </div>
       {selectedProfile && (
-        <div className="mt-8 p-4 border rounded bg-muted">
+        <div className="mt-8 p-4 border border-border rounded bg-muted">
           <div className="font-semibold">Current Role: {selectedProfile.role}</div>
           <div className="text-xs text-muted-foreground">ApartmentProfile ID: {selectedProfile._id}</div>
         </div>

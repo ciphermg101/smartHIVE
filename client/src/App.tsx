@@ -9,13 +9,13 @@ import { Toaster } from '@components/ui/sonner'
 
 const queryClient = new QueryClient()
 
-const Home = lazy(() => import('@pages/index'))
 const SignIn = lazy(() => import('@pages/SignIn'))
 const SignUp = lazy(() => import('@pages/SignUp'))
 const UserProfile = lazy(() => import('@pages/UserProfile'))
 const Unauthorized = lazy(() => import('@pages/Unauthorized'))
 const Onboarding = lazy(() => import('@pages/Onboarding'))
 const DashboardPage = lazy(() => import('@pages/DashboardPage'))
+const Landing = lazy(() => import('@pages/Landing'))
 
 function App() {
   const { user, isLoaded } = useUser()
@@ -30,6 +30,7 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DashboardPage />
@@ -38,11 +39,6 @@ function App() {
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
-              </ProtectedRoute>
-            } />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Home />
               </ProtectedRoute>
             } />
             <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" />} />

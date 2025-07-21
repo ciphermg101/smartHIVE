@@ -8,7 +8,7 @@ export default function SignInPage(props: ComponentProps<typeof SignIn>) {
     return <Navigate to="/onboarding" replace />
   }
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <SignIn {...props} />
     </div>
   )
