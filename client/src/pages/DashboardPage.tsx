@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useApartmentStore } from '@store/apartment'
 import { useUserStore } from '@store/user'
 import { useNavigate } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { useClerk } from '@clerk/clerk-react'
 import { Menu, Home, Users, FileText, Settings, LogOut, DollarSign, AlertCircle, Plus, Search, Bell, User, ChevronDown, Building, MapPin, Eye, ArrowUp, ArrowDown } from 'lucide-react'
 import { ThemeToggle } from '@components/ui/ThemeToggle'
 import smartHiveLogo from '@/assets/smartHIVE-logo.png'
+import { useCallback } from 'react'
 
 const navItems = [
   { label: 'Overview', icon: Home, badge: null },
@@ -43,10 +44,40 @@ export default function DashboardPage() {
   const setUser = useUserStore(s => s.setUser)
   const setProfiles = useUserStore(s => s.setProfiles)
   const setUserSelectedProfile = useUserStore(s => s.setSelectedProfile)
+  const userProfiles = useUserStore(s => s.profiles)
+  const user = useUserStore(s => s.user)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeNav, setActiveNav] = useState('Overview')
   const navigate = useNavigate()
   const { signOut } = useClerk()
+  const [showApartmentList, setShowApartmentList] = useState(false)
+  const apartmentListRef = useRef<HTMLDivElement>(null)
+
+  const handleSwitchApartment = useCallback(() => {
+    setShowApartmentList((v) => !v)
+  }, [])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (apartmentListRef.current && !apartmentListRef.current.contains(e.target as Node)) {
+        setShowApartmentList(false)
+      }
+    }
+    if (showApartmentList) {
+      document.addEventListener('mousedown', handleClick)
+    } else {
+      document.removeEventListener('mousedown', handleClick)
+    }
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showApartmentList])
+
+  function handleSelectApartment(apartmentId: string) {
+    setSelectedApartment(apartmentId)
+    const profile = userProfiles.find((p: any) => p.apartmentId === apartmentId) || null
+    setSelectedProfile(profile)
+    setShowApartmentList(false)
+  }
 
   // Clerk logout handler
   const handleLogout = async () => {
@@ -231,25 +262,32 @@ export default function DashboardPage() {
           ))}
         </nav>
 
-        {/* User Section */}
-        <div className="p-4 border-t border-border">
-          <div className={`flex items-center space-x-3 mb-3 ${sidebarOpen ? '' : 'justify-center'}`}>
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            {sidebarOpen && (
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">Property Manager</p>
-              </div>
-            )}
-          </div>
-          <button className="flex items-center w-full px-2 py-2 text-left hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors text-muted-foreground hover:text-red-600 dark:hover:text-red-400" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
-            <span className={`transition-all duration-300 text-sm ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}>
-              Logout
-            </span>
+        {/* Switch Apartment Button */}
+        <div className="p-4 border-t border-border mt-auto relative">
+          <button
+            className="flex items-center w-full px-2 py-2 text-left bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-lg transition-colors text-blue-700 dark:text-blue-300 font-medium"
+            onClick={handleSwitchApartment}
+          >
+            <Building className="w-4 h-4 mr-3 flex-shrink-0" />
+            <span className={`transition-all duration-300 text-sm ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0'}`}>Switch Apartment</span>
           </button>
+          {showApartmentList && (
+            <div ref={apartmentListRef} className="absolute left-0 right-0 bottom-14 z-50 bg-card dark:bg-zinc-900 border border-border rounded-lg shadow-lg py-2 max-h-60 overflow-y-auto animate-fade-in">
+              {userProfiles.length === 0 ? (
+                <div className="px-4 py-2 text-muted-foreground text-sm">No apartments found.</div>
+              ) : (
+                userProfiles.map((profile: any) => (
+                  <button
+                    key={profile.apartmentId}
+                    className="w-full text-left px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900 text-foreground text-sm transition-colors"
+                    onClick={() => handleSelectApartment(profile.apartmentId)}
+                  >
+                    {profile.apartmentName || profile.apartmentId}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
@@ -259,7 +297,7 @@ export default function DashboardPage() {
         <header className="bg-card dark:bg-zinc-900 shadow-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Good morning, John! 👋</h1>
+              <h1 className="text-2xl font-bold text-foreground">Good morning, {user?.firstName || 'John'}! 👋</h1>
               <p className="text-sm text-muted-foreground mt-1">Here's what's happening with your properties today.</p>
             </div>
             <div className="flex items-center space-x-4">
@@ -275,6 +313,20 @@ export default function DashboardPage() {
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               </button>
+              {/* User Info and Logout */}
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium text-foreground">{user?.firstName || 'John'} {user?.lastName || 'Doe'}</span>
+                  <span className="text-xs text-muted-foreground">Property Manager</span>
+                </div>
+                <button className="flex items-center px-2 py-2 text-left hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors text-muted-foreground hover:text-red-600 dark:hover:text-red-400" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="text-sm">Logout</span>
+                </button>
+              </div>
               <ThemeToggle />
             </div>
           </div>
