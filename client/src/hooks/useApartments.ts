@@ -83,6 +83,9 @@ export function useInviteApartmentUser(apartmentId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apartment-users', apartmentId] })
     },
+    onError: (error: any) => {
+      throw error.response?.data?.message || 'Failed to send invitation';
+    }
   })
 }
 
