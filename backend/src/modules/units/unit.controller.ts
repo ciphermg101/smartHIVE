@@ -11,12 +11,15 @@ const createUnitSchema = z.object({
   unitNo: z.string().min(1),
   rent: z.number().min(0),
   apartmentId: z.string().min(1),
+  imageUrl: z.string().optional(),
 });
 
 const updateUnitSchema = z.object({
   unitNo: z.string().min(1).optional(),
   rent: z.number().min(0).optional(),
   tenantId: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  status: z.enum(['VACANT', 'OCCUPIED', 'MAINTENANCE']).optional(),
 });
 
 router.post(
@@ -27,9 +30,10 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unit = await UnitService.create({
+        apartmentId: req.body.apartmentId,
         unitNo: req.body.unitNo,
         rent: req.body.rent,
-        apartmentId: req.body.apartmentId,
+        imageUrl: req.body.imageUrl,
       });
       res.status(201).json({ success: true, message: 'Unit created', data: unit });
     } catch (err) {
@@ -44,8 +48,14 @@ router.get(
   rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const apartmentId = req.query.apartmentId as string || req.body.apartmentId || req.params.apartmentId;
-      const units = await UnitService.listByApartment(apartmentId || '');
+      const { apartmentId } = req.query;
+      if (!apartmentId || typeof apartmentId !== 'string') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'apartmentId is required as a query parameter' 
+        });
+      }
+      const units = await UnitService.listByApartment(apartmentId);
       res.json({ success: true, data: units });
     } catch (err) {
       next(err);

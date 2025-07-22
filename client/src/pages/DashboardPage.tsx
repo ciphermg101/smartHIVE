@@ -27,6 +27,7 @@ import TenantsSection from "@features/TenantsSection";
 import UnitsSection from "@features/UnitsSection";
 import PaymentsSection from "@features/PaymentsSection";
 import IssuesSection from "@features/IssuesSection";
+import type { ApartmentWithProfile } from "@/interfaces/apartments";
 
 const navItems = [
   { label: "Overview", icon: Home, badge: null },
@@ -50,8 +51,7 @@ export default function DashboardPage() {
   const { signOut } = useClerk();
   const [showApartmentList, setShowApartmentList] = useState(false);
   const apartmentListRef = useRef<HTMLDivElement>(null);
-  const { data: apartments = [], isLoading: apartmentsLoading } =
-    useMyApartments();
+  const { data: apartments = [] as ApartmentWithProfile[], isLoading: apartmentsLoading } = useMyApartments();
   const selectedProfile = useApartmentStore((s) => s.selectedProfile);
 
   useEffect(() => {
@@ -83,8 +83,8 @@ export default function DashboardPage() {
 
   function handleSelectApartment(apartmentId: string) {
     setSelectedApartment(apartmentId);
-    const apartment = apartments.find((a: any) => a._id === apartmentId);
-    setSelectedProfile(apartment?.profile || null);
+    const apartment = apartments.find((a: ApartmentWithProfile) => a.profile.apartmentId === apartmentId);
+    setSelectedProfile(apartment || null);
     setShowApartmentList(false);
   }
 
@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
   // Dynamically add 'Manage Apartment' for owners
   const sidebarNav = [...navItems];
-  if (selectedProfile?.role === "owner") {
+  if (selectedProfile?.profile.role === "owner") {
     sidebarNav.unshift({
       label: "Manage Apartment",
       icon: Settings,
@@ -272,7 +272,7 @@ export default function DashboardPage() {
         <section className="flex-1 p-6">
           {activeNav === "Overview" && <OverviewSection />}
           {activeNav === "Manage Apartment" &&
-            selectedProfile?.role === "owner" && <ManageApartmentSection />}
+            selectedProfile?.profile?.role === "owner" && <ManageApartmentSection />}
           {activeNav === "Tenants" && <TenantsSection />}
           {activeNav === "Units" && <UnitsSection />}
           {activeNav === "Payments" && <PaymentsSection />}

@@ -36,12 +36,14 @@ function getInitials(name?: string) {
 }
 
 const ManageApartmentSection: React.FC = () => {
-  const selectedApartment = useApartmentStore((s) => s.selectedApartment) || '';
-  const { data: apartment, isLoading: apartmentLoading, error: apartmentError } = useApartment(selectedApartment);
-  const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmenTenants(selectedApartment);
-  const inviteUser = useInviteApartmentUser(selectedApartment);
-  const removeUser = useRemoveApartmentUser(selectedApartment);
-  const updateApartment = useUpdateApartment(selectedApartment);
+  const selectedProfile = useApartmentStore((s) => s.selectedProfile);
+  const apartmentId = selectedProfile?.profile.apartmentId || '';
+  console.log(apartmentId);
+  const { data: apartment, isLoading: apartmentLoading, error: apartmentError } = useApartment(apartmentId);
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmenTenants(apartmentId);
+  const inviteUser = useInviteApartmentUser(apartmentId);
+  const removeUser = useRemoveApartmentUser(apartmentId);
+  const updateApartment = useUpdateApartment(apartmentId);
 
   const [tab, setTab] = useState('General');
   const [editOpen, setEditOpen] = useState(false);
@@ -100,7 +102,7 @@ const ManageApartmentSection: React.FC = () => {
       if (selectedFile) {
         try {
           setUploading(true);
-          const folderName = apartment?.name
+          const folderName = selectedProfile?.name
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
@@ -127,7 +129,7 @@ const ManageApartmentSection: React.FC = () => {
 
       updateApartment.mutate(
         {
-          id: apartment._id,
+          id: apartmentId,
           ...editForm,
           imageUrl
         },

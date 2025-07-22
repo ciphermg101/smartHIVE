@@ -19,7 +19,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@components/ui/form';
 import { useCreateUnit, useUnits } from '@hooks/useUnits';
-import { useApartment } from '@hooks/useApartments';
 import { 
   uploadImageToCloudinary, 
   validateImageFile, 
@@ -54,8 +53,8 @@ const unitFormSchema = z.object({
 type UnitFormValues = z.infer<typeof unitFormSchema>;
 
 const UnitsSection: React.FC = () => {
-  const { selectedApartment } = useApartmentStore();
-  const { data: apartment } = useApartment(selectedApartment || '');
+  const selectedProfile = useApartmentStore((s) => s.selectedProfile);
+  const apartmentId = selectedProfile?.profile.apartmentId || '';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -63,8 +62,8 @@ const UnitsSection: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { data: units = [], isLoading } = useUnits(selectedApartment || '');
-  const createUnitMutation = useCreateUnit(selectedApartment || '');
+  const { data: units = [], isLoading } = useUnits(apartmentId);
+  const createUnitMutation = useCreateUnit(apartmentId);
 
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitFormSchema) as any,
@@ -84,7 +83,7 @@ const UnitsSection: React.FC = () => {
 
       if (selectedFile) {
         try {
-          const folderName = apartment?.name
+          const folderName = selectedProfile?.name
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
@@ -110,6 +109,7 @@ const UnitsSection: React.FC = () => {
       }
 
       await createUnitMutation.mutateAsync({
+        apartmentId,
         unitNo: data.unitNo,
         rent: data.rent,
         ...(imageUrl && { imageUrl }),
@@ -280,7 +280,10 @@ const UnitsSection: React.FC = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="unit-image">Unit Image (Optional)</Label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                  <label 
+                    htmlFor="unit-image"
+                    className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary hover:bg-accent/50 transition-colors cursor-pointer"
+                  >
                     <div className="space-y-1 text-center">
                       {previewUrl ? (
                         <div className="relative">
@@ -300,34 +303,31 @@ const UnitsSection: React.FC = () => {
                           </Button>
                         </div>
                       ) : (
-                        <>
-                          <div className="mx-auto h-12 w-12 text-gray-400">
+                        <div className="space-y-2">
+                          <div className="mx-auto flex items-center justify-center h-12 w-12 text-gray-400">
                             <ImageIcon className="h-12 w-12" />
                           </div>
                           <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                            <label
-                              htmlFor="unit-image"
-                              className="relative cursor-pointer rounded-md bg-transparent font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
-                            >
-                              <span>Upload an image</span>
-                              <input
-                                id="unit-image"
-                                name="unit-image"
-                                type="file"
-                                className="sr-only"
-                                accept="image/jpeg, image/png, image/webp"
-                                onChange={handleFileChange}
-                              />
-                            </label>
+                            <span className="relative rounded-md bg-transparent font-medium text-primary hover:text-primary/80 focus-within:outline-none">
+                              Upload a file
+                            </span>
                             <p className="pl-1">or drag and drop</p>
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             PNG, JPG, WEBP up to 3MB
                           </p>
-                        </>
+                        </div>
                       )}
                     </div>
-                  </div>
+                    <input
+                      id="unit-image"
+                      name="unit-image"
+                      type="file"
+                      className="sr-only"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                  </label>
                   {formError && (
                     <p className="mt-1 text-sm text-destructive">{formError}</p>
                   )}
@@ -391,6 +391,7 @@ const UnitsSection: React.FC = () => {
               variant="default"
               size="lg"
               className="font-semibold px-6 py-3 rounded-lg shadow-md"
+              onClick={() => setIsModalOpen(true)}
             >
               + Add Your First Unit
             </Button>

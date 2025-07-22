@@ -13,7 +13,7 @@ export function useProtectedRoute(allowedRoles?: string[]) {
         navigate('/sign-in')
         return
       }
-    if (allowedRoles && (!selectedProfile || !allowedRoles.includes(selectedProfile.role))) {
+    if (allowedRoles && (!selectedProfile || !allowedRoles.includes(selectedProfile.profile.role))) {
         navigate('/unauthorized')
       return
     }

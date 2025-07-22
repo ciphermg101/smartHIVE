@@ -1,13 +1,13 @@
 import { Unit, IUnit } from "@modules/units/unit.model";
 import { Apartment } from "@modules/apartments/apartment.model";
 import { Types } from "mongoose";
-import { errorHandler } from "@common/error-handler/errorHandler";
 
 export class UnitService {
   static async create(data: {
+    apartmentId: string;
     unitNo: string;
     rent: number;
-    apartmentId: string;
+    imageUrl?: string;
   }): Promise<IUnit> {
     try {
       if (!Types.ObjectId.isValid(data.apartmentId))
@@ -15,11 +15,17 @@ export class UnitService {
       const apartment = await Apartment.findById(data.apartmentId);
       if (!apartment)
         throw Object.assign(new Error("Apartment not found"), { status: 404 });
-      const unit = await Unit.create({
+      const unitData: any = {
         unitNo: data.unitNo,
         rent: data.rent,
-        apartmentId: new Types.ObjectId(data.apartmentId),
-      });
+        apartmentId: data.apartmentId,
+      };
+      
+      if (data.imageUrl) {
+        unitData.imageUrl = data.imageUrl;
+      }
+      
+      const unit = await Unit.create(unitData);
 
       apartment.units.push(unit._id as any);
       await apartment.save();
@@ -31,10 +37,16 @@ export class UnitService {
 
   static async listByApartment(apartmentId: string): Promise<IUnit[]> {
     try {
-      if (!Types.ObjectId.isValid(apartmentId))
+      if (!Types.ObjectId.isValid(apartmentId)) {
         throw Object.assign(new Error("Invalid apartmentId"), { status: 400 });
-      return Unit.find({ apartmentId: new Types.ObjectId(apartmentId) }).lean();
+      }
+      
+      // Convert string ID to ObjectId for the query
+      const objectId = new Types.ObjectId(apartmentId);
+      const units = await Unit.find({ apartmentId: objectId }).lean();
+      return units;
     } catch (err) {
+      console.error('Error in listByApartment:', err);
       throw err;
     }
   }
@@ -50,7 +62,7 @@ export class UnitService {
 
   static async update(
     id: string,
-    data: Partial<Pick<IUnit, "unitNo" | "rent" | "tenantId">>
+    data: Partial<Pick<IUnit, "unitNo" | "rent" | "tenantId" | "imageUrl">>
   ): Promise<IUnit | null> {
     try {
       if (!Types.ObjectId.isValid(id))

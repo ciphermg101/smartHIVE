@@ -7,6 +7,7 @@ export interface IUnit extends Document {
   tenantId?: string | null;
   apartmentId: Types.ObjectId;
   status: UnitStatus;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,6 +17,7 @@ const unitSchema = new Schema<IUnit>({
   rent: { type: Number, required: true },
   tenantId: { type: String, default: null },
   apartmentId: { type: Schema.Types.ObjectId, ref: 'Apartment', required: true },
+  imageUrl: { type: String },
   status: {
     type: String,
     enum: Object.values(UnitStatus),

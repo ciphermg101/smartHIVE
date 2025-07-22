@@ -157,7 +157,7 @@ export default function OnboardingPage() {
 
   function handleSelect(apartment: ApartmentWithProfile) {
     setSelectedApartment(apartment._id);
-    setSelectedProfile(apartment.profile);
+    setSelectedProfile(apartment);
     navigate("/dashboard");
   }
   

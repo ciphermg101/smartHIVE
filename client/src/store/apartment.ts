@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ApartmentProfile } from '@/interfaces/apartments'
+import type { ApartmentWithProfile } from '@/interfaces/apartments'
 
 interface ApartmentState {
   selectedApartment: string | null
-  selectedProfile: ApartmentProfile | null
+  selectedProfile: ApartmentWithProfile | null
   setSelectedApartment: (id: string | null) => void
-  setSelectedProfile: (profile: ApartmentProfile | null) => void
+  setSelectedProfile: (profile: ApartmentWithProfile | null) => void
 }
 
 export const useApartmentStore = create<ApartmentState>()(
