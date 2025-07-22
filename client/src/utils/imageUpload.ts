@@ -90,7 +90,7 @@ export async function uploadImageToCloudinary(
         uploadUrl: string;
         uploadPreset: string;
     },
-    options: ImageUploadOptions = {},
+    options: ImageUploadOptions & { folder?: string } = {},
     onProgress?: (progress: ImageUploadProgress) => void
 ): Promise<string> {
     const validation = validateImageFile(file, options);
@@ -107,6 +107,11 @@ export async function uploadImageToCloudinary(
     formData.append("upload_preset", cloudinaryConfig.uploadPreset);
     formData.append("quality", "auto:good");
     formData.append("fetch_format", "auto");
+    
+    // Add folder if specified
+    if (options.folder) {
+        formData.append("folder", options.folder);
+    }
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();

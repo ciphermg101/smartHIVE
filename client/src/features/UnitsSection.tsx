@@ -5,7 +5,7 @@ import { Label } from '@components/ui/label';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { Skeleton } from '@components/ui/skeleton';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Upload, Image as ImageIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,24 +18,53 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@components/ui/form';
-import { useCreateUnit, useUnits, useUploadUnitImage } from '@hooks/useUnits';
+import { useCreateUnit, useUnits } from '@hooks/useUnits';
+import { useApartment } from '@hooks/useApartments';
+import { 
+  uploadImageToCloudinary, 
+  validateImageFile, 
+  createPreviewUrl,
+  cleanupPreviewUrl,
+  type ImageUploadProgress 
+} from '@utils/imageUpload';
+
+const imageUploadConfig = {
+  uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
+  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
+
+const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // 3MB
 
 const unitFormSchema = z.object({
-  unitNo: z.string().min(1, 'Unit number is required'),
-  rent: z.coerce.number().min(0, 'Rent must be a positive number'),
-  image: z.any().optional(),
+  unitNo: z.string()
+    .min(1, 'Unit number is required')
+    .regex(/^[A-Za-z0-9-]+$/, 'Only letters, numbers, and hyphens are allowed'),
+  rent: z.coerce.number()
+    .min(0, 'Rent must be a positive number')
+    .max(1000000, 'Rent seems too high'),
+  image: z.any()
+    .refine(file => !file || file.size <= MAX_IMAGE_SIZE, 'Image must be less than 3MB')
+    .refine(
+      file => !file || ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+      'Only .jpg, .png, and .webp formats are supported'
+    )
+    .optional(),
 });
 
 type UnitFormValues = z.infer<typeof unitFormSchema>;
 
 const UnitsSection: React.FC = () => {
   const { selectedApartment } = useApartmentStore();
+  const { data: apartment } = useApartment(selectedApartment || '');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: units = [], isLoading } = useUnits(selectedApartment || '');
   const createUnitMutation = useCreateUnit(selectedApartment || '');
-  const uploadImageMutation = useUploadUnitImage();
 
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitFormSchema) as any,
@@ -47,12 +76,37 @@ const UnitsSection: React.FC = () => {
 
   const onSubmit = async (data: UnitFormValues) => {
     try {
+      setFormError(null);
+      setUploading(true);
+      setUploadProgress({ progress: 0, stage: 'compressing' });
+
       let imageUrl = '';
 
-      if (data.image?.[0]) {
-        const file = data.image[0];
-        const { imageUrl: uploadedUrl } = await uploadImageMutation.mutateAsync(file);
-        imageUrl = uploadedUrl;
+      if (selectedFile) {
+        try {
+          const folderName = apartment?.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          
+          imageUrl = await uploadImageToCloudinary(
+            selectedFile,
+            imageUploadConfig,
+            {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.8,
+              maxSizeBytes: MAX_IMAGE_SIZE,
+              folder: `apartments/${folderName}/units`
+            },
+            (progress) => setUploadProgress(progress)
+          );
+        } catch (error) {
+          setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setUploading(false);
+          setUploadProgress(null);
+          return;
+        }
       }
 
       await createUnitMutation.mutateAsync({
@@ -61,37 +115,82 @@ const UnitsSection: React.FC = () => {
         ...(imageUrl && { imageUrl }),
       });
 
-      toast.success('Unit created successfully');
-      setIsModalOpen(false);
-      form.reset();
-      setPreviewUrl('');
+      toast.success('Unit created successfully', {
+        duration: 2000,
+        position: 'top-center',
+      });
+      
+      setTimeout(() => {
+        setIsModalOpen(false);
+        form.reset();
+        setPreviewUrl('');
+        setSelectedFile(null);
+        setUploading(false);
+        setUploadProgress(null);
+      }, 500);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      setFormError('Failed to create unit. Please try again.');
       toast.error('Failed to create unit. Please try again.');
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+    if (!file) return;
+
+    const validation = validateImageFile(file, { maxSizeBytes: MAX_IMAGE_SIZE });
+    if (!validation.isValid) {
+      setFormError(validation.error!);
+      return;
     }
+
+    if (previewUrl) {
+      cleanupPreviewUrl(previewUrl);
+    }
+
+    setSelectedFile(file);
+    setFormError(null);
+    
+    const newPreviewUrl = createPreviewUrl(file);
+    setPreviewUrl(newPreviewUrl);
+    form.setValue('image', file as any);
+    
+    setUploadProgress(null);
   };
 
   const removeImage = () => {
+    if (previewUrl) {
+      cleanupPreviewUrl(previewUrl);
+    }
     setPreviewUrl('');
+    setSelectedFile(null);
     form.setValue('image', undefined);
   };
 
-  // Clean up object URLs on unmount
   useEffect(() => {
     return () => {
       if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+        cleanupPreviewUrl(previewUrl);
       }
     };
   }, [previewUrl]);
+
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      if (previewUrl) {
+        cleanupPreviewUrl(previewUrl);
+        setPreviewUrl('');
+      }
+      setFormError(null);
+      setUploadProgress(null);
+      setUploading(false);
+      form.reset();
+    }
+    setIsModalOpen(open);
+  };
 
   if (isLoading) {
     return (
@@ -126,7 +225,7 @@ const UnitsSection: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Units</h2>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
           <DialogTrigger asChild>
             <Button
               variant="default"
@@ -181,32 +280,73 @@ const UnitsSection: React.FC = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="unit-image">Unit Image (Optional)</Label>
-                  <Input
-                    id="unit-image"
-                    type="file"
-                    accept="image/*"
-                    className="cursor-pointer"
-                    onChange={(e) => {
-                      handleFileChange(e);
-                      form.setValue('image', e.target.files);
-                    }}
-                  />
-                  {previewUrl && (
-                    <div className="relative mt-2">
-                      <img
-                        src={previewUrl}
-                        alt="Unit preview"
-                        className="h-32 w-32 object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                        onClick={removeImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                    <div className="space-y-1 text-center">
+                      {previewUrl ? (
+                        <div className="relative">
+                          <img
+                            src={previewUrl}
+                            alt="Unit preview"
+                            className="h-48 w-full object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+                            onClick={removeImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mx-auto h-12 w-12 text-gray-400">
+                            <ImageIcon className="h-12 w-12" />
+                          </div>
+                          <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                            <label
+                              htmlFor="unit-image"
+                              className="relative cursor-pointer rounded-md bg-transparent font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
+                            >
+                              <span>Upload an image</span>
+                              <input
+                                id="unit-image"
+                                name="unit-image"
+                                type="file"
+                                className="sr-only"
+                                accept="image/jpeg, image/png, image/webp"
+                                onChange={handleFileChange}
+                              />
+                            </label>
+                            <p className="pl-1">or drag and drop</p>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            PNG, JPG, WEBP up to 3MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {formError && (
+                    <p className="mt-1 text-sm text-destructive">{formError}</p>
+                  )}
+                  {uploadProgress && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>
+                          {uploadProgress.stage === 'compressing' 
+                            ? 'Compressing...' 
+                            : 'Uploading...'}
+                        </span>
+                        <span>{Math.round(uploadProgress.progress)}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300 ease-in-out"
+                          style={{ width: `${uploadProgress.progress}%` }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -216,20 +356,26 @@ const UnitsSection: React.FC = () => {
                     type="button"
                     variant="outline"
                     onClick={() => setIsModalOpen(false)}
-                    disabled={uploadImageMutation.isPending || createUnitMutation.isPending}
+                    disabled={createUnitMutation.isPending}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createUnitMutation.isPending || uploadImageMutation.isPending}
+                    disabled={createUnitMutation.isPending || uploading}
+                    className="w-full sm:w-auto"
                   >
-                    {createUnitMutation.isPending || uploadImageMutation.isPending ? (
+                    {uploading || createUnitMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {uploadImageMutation.isPending ? 'Uploading...' : 'Creating...'}
+                        {uploadProgress?.stage === 'uploading' ? 'Uploading...' : 'Creating...'}
                       </>
-                    ) : 'Create Unit'}
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Create Unit
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>

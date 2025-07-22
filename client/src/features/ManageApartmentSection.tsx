@@ -100,6 +100,11 @@ const ManageApartmentSection: React.FC = () => {
       if (selectedFile) {
         try {
           setUploading(true);
+          const folderName = apartment?.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+            
           imageUrl = await uploadImageToCloudinary(
             selectedFile,
             imageUploadConfig,
@@ -107,7 +112,8 @@ const ManageApartmentSection: React.FC = () => {
               maxWidth: 1200,
               maxHeight: 1200,
               quality: 0.8,
-              maxSizeBytes: 3 * 1024 * 1024
+              maxSizeBytes: 3 * 1024 * 1024,
+              folder: `apartments/${folderName}`
             },
             (progress) => setUploadProgress(progress)
           );
