@@ -154,8 +154,7 @@ export default function OnboardingPage() {
     setSelectedProfile(apartment.profile);
     navigate("/dashboard");
   }
-
-  // Clean up preview URL when component unmounts or modal closes
+  
   const handleModalClose = (open: boolean) => {
     if (!open && previewUrl) {
       cleanupPreviewUrl(previewUrl);
