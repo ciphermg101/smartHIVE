@@ -21,7 +21,8 @@
     "pages": "@pages",
     "assets": "@assets",
     "interfaces": "@interfaces",
-    "features": "@features"
+    "features": "@features",
+    "utils": "@utils"
   },
   "iconLibrary": "lucide"
 }

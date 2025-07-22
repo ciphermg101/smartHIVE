@@ -3,6 +3,18 @@ import { useApartmentStore } from '@store/apartment';
 import { useApartment, useApartmenTenants, useInviteApartmentUser, useRemoveApartmentUser, useUpdateApartment } from '@/hooks/useApartments';
 import { Dialog, DialogContent, DialogTitle } from '@components/ui/dialog';
 import { toast } from 'sonner';
+import { 
+  uploadImageToCloudinary, 
+  validateImageFile, 
+  createPreviewUrl,
+  cleanupPreviewUrl,
+  type ImageUploadProgress 
+} from '@utils/imageUpload';
+
+const imageUploadConfig = {
+  uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
+  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
 
 const TABS = [
   { label: 'General' },
@@ -34,6 +46,10 @@ const ManageApartmentSection: React.FC = () => {
   const [tab, setTab] = useState('General');
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
   const [saving, setSaving] = useState(false);
   const [inviteList, setInviteList] = useState([{ email: '', role: 'Tenant' }]);
   const [inviting, setInviting] = useState(false);
@@ -44,29 +60,97 @@ const ManageApartmentSection: React.FC = () => {
   // General Tab
   function openEdit() {
     setEditForm(apartment);
+    setPreviewUrl(apartment?.imageUrl || "");
+    setSelectedFile(null);
     setEditOpen(true);
   }
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file, { maxSizeBytes: 3 * 1024 * 1024 });
+    if (!validation.isValid) {
+      setError(validation.error!);
+      return;
+    }
+
+    if (previewUrl) {
+      cleanupPreviewUrl(previewUrl);
+    }
+
+    setSelectedFile(file);
+    setError(null);
+    
+    const newPreviewUrl = createPreviewUrl(file);
+    setPreviewUrl(newPreviewUrl);
+  }
+
   function handleEditChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   }
-  function handleEditSubmit(e: React.FormEvent) {
+  async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    updateApartment.mutate(
-      { id: apartment._id, ...editForm },
-      {
-        onSuccess: () => {
-          setEditOpen(false);
+
+    try {
+      let imageUrl = editForm?.imageUrl || '';
+      
+      // Upload new image if a file is selected
+      if (selectedFile) {
+        try {
+          setUploading(true);
+          imageUrl = await uploadImageToCloudinary(
+            selectedFile,
+            imageUploadConfig,
+            {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.8,
+              maxSizeBytes: 3 * 1024 * 1024
+            },
+            (progress) => setUploadProgress(progress)
+          );
+        } catch (error) {
+          console.error("Upload error:", error);
+          setError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setUploading(false);
           setSaving(false);
-          toast.success('Apartment updated');
-        },
-        onError: (err: any) => {
-          setError(err?.response?.data?.message || 'Failed to update apartment');
-          setSaving(false);
-        },
+          return;
+        }
       }
-    );
+
+      // Update apartment with the new data
+      updateApartment.mutate(
+        { 
+          id: apartment._id, 
+          ...editForm, 
+          imageUrl 
+        },
+        {
+          onSuccess: () => {
+            setEditOpen(false);
+            setSaving(false);
+            setUploading(false);
+            setUploadProgress(null);
+            toast.success('Apartment updated');
+          },
+          onError: (err: any) => {
+            setError(err?.response?.data?.message || 'Failed to update apartment');
+            setSaving(false);
+            setUploading(false);
+            setUploadProgress(null);
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error in handleEditSubmit:", error);
+      setError('An unexpected error occurred. Please try again.');
+      setSaving(false);
+      setUploading(false);
+      setUploadProgress(null);
+    }
   }
 
   function handleInviteChange(idx: number, field: string, value: string) {
@@ -197,30 +281,129 @@ const ManageApartmentSection: React.FC = () => {
       )}
 
       {/* Edit Modal */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogTitle>Edit Apartment</DialogTitle>
-          <form onSubmit={handleEditSubmit} className="space-y-4 mt-2">
-            <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input name="name" value={editForm?.name || ''} onChange={handleEditChange} className="w-full px-3 py-2 border rounded" />
+      <Dialog open={editOpen} onOpenChange={(open) => {
+        if (!open && previewUrl) {
+          cleanupPreviewUrl(previewUrl);
+          setPreviewUrl("");
+          setSelectedFile(null);
+          setUploadProgress(null);
+        }
+        setEditOpen(open);
+      }}>
+        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-md w-full rounded-xl shadow-2xl p-8 bg-white dark:bg-zinc-900 max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Edit Apartment Details
+          </DialogTitle>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Update your apartment information
+          </p>
+          
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Apartment Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={editForm?.name || ''}
+                onChange={handleEditChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white transition-colors"
+                required
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
-              <input name="location" value={editForm?.location || ''} onChange={handleEditChange} className="w-full px-3 py-2 border rounded" />
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Location
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={editForm?.location || ''}
+                onChange={handleEditChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white transition-colors"
+                required
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea name="description" value={editForm?.description || ''} onChange={handleEditChange} className="w-full px-3 py-2 border rounded" />
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Description (optional)
+              </label>
+              <textarea
+                name="description"
+                value={editForm?.description || ''}
+                onChange={handleEditChange}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white transition-colors"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Image URL</label>
-              <input name="imageUrl" value={editForm?.imageUrl || ''} onChange={handleEditChange} className="w-full px-3 py-2 border rounded" />
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Apartment Image (optional, max 3MB - optimized for faster upload)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={uploading || saving}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300 dark:hover:file:bg-blue-800/50"
+              />
+              
+              {uploadProgress && (
+                <div className="space-y-2 mt-2">
+                  <div className="text-sm text-blue-600 dark:text-blue-400">
+                    {uploadProgress.stage === 'compressing' && "Compressing image for faster upload..."}
+                    {uploadProgress.stage === 'uploading' && `Uploading ${Math.round(uploadProgress.progress)}%`}
+                    {uploadProgress.stage === 'complete' && "Upload complete!"}
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress.progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {(previewUrl || editForm?.imageUrl) && (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    {selectedFile ? 'New Image Preview:' : 'Current Image:'}
+                  </p>
+                  <img
+                    src={previewUrl || editForm.imageUrl}
+                    alt="Apartment preview"
+                    className="rounded-md border h-32 w-full object-cover mt-1"
+                  />
+                </div>
+              )}
             </div>
-            {error && <div className="text-red-600 text-sm">{error}</div>}
-            <div className="flex justify-end space-x-2">
-              <button type="button" onClick={() => setEditOpen(false)} className="px-4 py-2 rounded bg-muted">Cancel</button>
-              <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+            
+            {error && (
+              <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200 dark:bg-red-900/30 dark:border-red-800 dark:text-red-200">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                className="px-4 py-2.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </form>
         </DialogContent>

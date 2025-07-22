@@ -17,7 +17,8 @@
       "@pages/*": ["./src/pages/*"],
       "@features/*": ["./src/features/*"],
       "@assets/*": ["./src/assets/*"],
-      "@interfaces/*": ["interfaces/*"]
+      "@interfaces/*": ["interfaces/*"],
+      "@utils/*": ["./src/utils/*"]
     }
   }
 }

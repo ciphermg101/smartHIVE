@@ -16,11 +16,18 @@ import type {
   ApartmentWithProfile,
 } from "@/interfaces/apartments";
 import { toast } from "sonner";
+import { 
+  uploadImageToCloudinary, 
+  validateImageFile, 
+  createPreviewUrl,
+  cleanupPreviewUrl,
+  type ImageUploadProgress 
+} from "@utils/imageUpload";
 
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${
-  import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-}/image/upload`;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const imageUploadConfig = {
+  uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
+  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -34,47 +41,38 @@ export default function OnboardingPage() {
     location: "",
     imageUrl: "",
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
 
   const { data, isLoading } = useMyApartments();
   const createApartment = useCreateApartment();
 
-  async function handleImageUpload(file: File) {
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      const res = await fetch(CLOUDINARY_UPLOAD_URL, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Image upload failed");
-
-      const data = await res.json();
-      return data.secure_url as string;
-    } catch (error) {
-      setFormError("Failed to upload image. Please try again.");
-      return "";
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = await handleImageUpload(file);
-    if (url) {
-      setForm((f) => ({ ...f, imageUrl: url }));
+
+    const validation = validateImageFile(file, { maxSizeBytes: 3 * 1024 * 1024 });
+    if (!validation.isValid) {
+      setFormError(validation.error!);
+      return;
     }
+
+    if (previewUrl) {
+      cleanupPreviewUrl(previewUrl);
+    }
+
+    setSelectedFile(file);
+    setFormError(null);
+    
+    const newPreviewUrl = createPreviewUrl(file);
+    setPreviewUrl(newPreviewUrl);
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
 
@@ -88,23 +86,67 @@ export default function OnboardingPage() {
       return;
     }
 
-    createApartment.mutate(form, {
-      onSuccess: () => {
-        toast.success("Apartment created successfully!", {
-          duration: 2000,
-          position: "top-center",
-        });
-        setTimeout(() => {
-          setModalOpen(false);
-          setForm({ name: "", description: "", location: "", imageUrl: "" });
-        }, 2000);
-      },
-      onError: (err: any) => {
-        setFormError(
-          err?.response?.data?.message || "Failed to create apartment."
-        );
-      },
-    });
+    setUploading(true);
+    setUploadProgress({ progress: 0, stage: 'compressing' });
+
+    try {
+      let imageUrl = "";
+      if (selectedFile) {
+        try {
+          imageUrl = await uploadImageToCloudinary(
+            selectedFile,
+            imageUploadConfig,
+            {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.8,
+              maxSizeBytes: 3 * 1024 * 1024
+            },
+            (progress) => setUploadProgress(progress)
+          );
+        } catch (error) {
+          console.error("Upload error:", error);
+          setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setUploading(false);
+          setUploadProgress(null);
+          return;
+        }
+      }
+
+      createApartment.mutate(
+        { ...form, imageUrl },
+        {
+          onSuccess: () => {
+            toast.success("Apartment created successfully!", {
+              duration: 2000,
+              position: "top-center",
+            });
+            setTimeout(() => {
+              setModalOpen(false);
+              setForm({ name: "", description: "", location: "", imageUrl: "" });
+              setSelectedFile(null);
+              if (previewUrl) {
+                cleanupPreviewUrl(previewUrl);
+              }
+              setPreviewUrl("");
+              setUploading(false);
+              setUploadProgress(null);
+            }, 2000);
+          },
+          onError: (err: any) => {
+            setFormError(
+              err?.response?.data?.message || "Failed to create apartment."
+            );
+            setUploading(false);
+            setUploadProgress(null);
+          },
+        }
+      );
+    } catch (error) {
+      setFormError("An unexpected error occurred. Please try again.");
+      setUploading(false);
+      setUploadProgress(null);
+    }
   }
 
   function handleSelect(apartment: ApartmentWithProfile) {
@@ -112,6 +154,17 @@ export default function OnboardingPage() {
     setSelectedProfile(apartment.profile);
     navigate("/dashboard");
   }
+
+  // Clean up preview URL when component unmounts or modal closes
+  const handleModalClose = (open: boolean) => {
+    if (!open && previewUrl) {
+      cleanupPreviewUrl(previewUrl);
+      setPreviewUrl("");
+      setSelectedFile(null);
+      setUploadProgress(null);
+    }
+    setModalOpen(open);
+  };
 
   return (
     <div className="min-h-screen bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-400 py-10">
@@ -121,7 +174,7 @@ export default function OnboardingPage() {
             Select Your Apartment
           </h1>
 
-          <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <Dialog open={modalOpen} onOpenChange={handleModalClose}>
             <DialogTrigger asChild>
               <Button
                 variant="default"
@@ -136,20 +189,11 @@ export default function OnboardingPage() {
             {modalOpen && (
               <div
                 className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm z-40"
-                onClick={() => setModalOpen(false)}
+                onClick={() => handleModalClose(false)}
               />
             )}
 
             <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-md w-full rounded-xl shadow-2xl p-8 bg-white dark:bg-zinc-900 max-h-[90vh] overflow-y-auto">
-              <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none text-2xl"
-                onClick={() => setModalOpen(false)}
-                aria-label="Close"
-                type="button"
-              >
-                &times;
-              </button>
-
               <DialogTitle className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Register New Apartment
               </DialogTitle>
@@ -190,27 +234,42 @@ export default function OnboardingPage() {
 
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    Apartment Image (optional)
+                    Apartment Image (optional, max 3MB - optimized for faster upload)
                   </span>
                   <Input
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
+                    disabled={uploading}
                   />
                 </label>
 
-                {uploading && (
-                  <div className="text-sm text-blue-600 animate-pulse">
-                    Uploading image...
+                {uploadProgress && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-blue-600 animate-pulse">
+                      {uploadProgress.stage === 'compressing' && "Compressing image for faster upload..."}
+                      {uploadProgress.stage === 'uploading' && "Uploading to Cloudinary..."}
+                      {uploadProgress.stage === 'complete' && "Upload complete!"}
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${uploadProgress.progress}%` }}
+                      />
+                    </div>
                   </div>
                 )}
 
-                {form.imageUrl && (
-                  <img
-                    src={form.imageUrl}
-                    alt="Apartment preview"
-                    className="rounded-md border h-32 w-full object-cover my-2"
-                  />
+                {previewUrl && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1">Image Preview:</p>
+                    <img
+                      src={previewUrl}
+                      alt="Apartment preview"
+                      className="rounded-md border h-32 w-full object-cover"
+                    />
+                  </div>
                 )}
 
                 {formError && (
