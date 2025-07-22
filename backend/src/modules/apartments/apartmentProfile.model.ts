@@ -1,42 +1,4 @@
 import { Schema, model, Document, Types } from 'mongoose';
-
-/**
- * @openapi
- * components:
- *   schemas:
- *     ApartmentProfile:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *         userId:
- *           type: string
- *           description: Clerk user ID
- *         apartmentId:
- *           type: string
- *           description: Apartment ID
- *         role:
- *           type: string
- *           enum: [owner, caretaker, tenant]
- *         unitId:
- *           type: string
- *           description: Unit ID (optional)
- *         dateJoined:
- *           type: string
- *           format: date-time
- *         invitedBy:
- *           type: string
- *           description: User ID of inviter
- *         status:
- *           type: string
- *           enum: [active, invited, inactive]
- *           default: active
- */
-/**
- * ApartmentProfile is the source of truth for all RBAC and role checks.
- * Clerk publicMetadata.role is NOT used for RBAC.
- * Each user can have multiple ApartmentProfiles (one per apartment/role).
- */
 export type ApartmentProfileRole = 'owner' | 'caretaker' | 'tenant';
 export type ApartmentProfileStatus = 'active' | 'invited' | 'inactive';
 

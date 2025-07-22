@@ -11,4 +11,17 @@ export interface ApartmentForm {
   description?: string
   location: string
   imageUrl?: string
-} 
+}
+
+export interface ApartmentProfile {
+  _id: string
+  userId: string
+  apartmentId: string
+  role: string
+  unitId?: string
+  status: string
+}
+
+export interface ApartmentWithProfile extends Apartment {
+  profile: ApartmentProfile
+}

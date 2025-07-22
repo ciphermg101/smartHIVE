@@ -11,7 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useMyApartments, useCreateApartment } from '@hooks/useApartments'
 import { useApartmentStore } from '@store/apartment'
-import type { ApartmentForm, Apartment } from '@/interfaces/apartments'
+import type { ApartmentForm, ApartmentWithProfile } from '@/interfaces/apartments'
 import { toast } from 'sonner'
 
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`
@@ -20,6 +20,7 @@ const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const setSelectedApartment = useApartmentStore((s) => s.setSelectedApartment)
+  const setSelectedProfile = useApartmentStore((s) => s.setSelectedProfile)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<ApartmentForm>({
@@ -98,8 +99,9 @@ export default function OnboardingPage() {
     })
   }
 
-  function handleSelect(apartment: Apartment) {
+  function handleSelect(apartment: ApartmentWithProfile) {
     setSelectedApartment(apartment._id)
+    setSelectedProfile(apartment.profile)
     navigate('/dashboard')
   }
 

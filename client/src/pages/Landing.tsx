@@ -246,7 +246,7 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((f) => (
-              <div key={f.title} className="group bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-zinc-800 card-hover">
+              <div key={f.title} className="bg-white border border-gray-200 dark:bg-zinc-900 dark:border-zinc-700 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 card-hover">
                 <div className={`w-16 h-16 bg-gradient-to-r ${f.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-2xl`}>
                   <span>{f.icon}</span>
                 </div>
@@ -268,7 +268,7 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((t) => (
-              <div key={t.name} className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-lg card-hover">
+              <div key={t.name} className="bg-white border border-gray-200 dark:bg-zinc-900 dark:border-zinc-700 rounded-2xl p-8 shadow-lg card-hover">
                 <div className="flex items-center mb-6">
                   <div className={`w-12 h-12 bg-gradient-to-r ${t.color} rounded-full flex items-center justify-center`}>
                     <span className="text-white font-bold">{t.initials}</span>

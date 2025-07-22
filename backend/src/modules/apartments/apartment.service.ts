@@ -16,7 +16,6 @@ export class ApartmentService {
       units: [],
     });
 
-    // Create ApartmentProfile for the owner
     await ApartmentProfile.create({
       userId: data.ownerId,
       apartmentId: apartment._id,
@@ -41,14 +40,6 @@ export class ApartmentService {
   static async listByCaretaker(userId: string): Promise<IApartment[]> {
     try {
       return Apartment.find({ caretakers: userId }).lean();
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  static async listByTenant(userId: string): Promise<IApartment[]> {
-    try {
-      return Apartment.find({ tenants: userId }).lean();
     } catch (err) {
       throw err;
     }
@@ -82,14 +73,24 @@ export class ApartmentService {
     }
   }
 
-  static async listByUserProfiles(userId: string): Promise<IApartment[]> {
-    try {
-      // Fetch all ApartmentProfiles for this user
-      const profiles = await ApartmentProfile.find({ userId }).lean();
-      const apartmentIds = profiles.map(p => p.apartmentId);
-      return Apartment.find({ _id: { $in: apartmentIds } }).lean();
-    } catch (err) {
-      throw err;
-    }
+  static async getUserApartmentsWithProfile(userId: string) {
+    const profiles = await ApartmentProfile.find({ userId }).lean();
+    const apartmentIds = profiles.map(p => p.apartmentId);
+    const apartments = await Apartment.find({ _id: { $in: apartmentIds } }).lean();
+    return apartments.map(apartment => {
+      const profile = profiles.find(p => p.apartmentId.toString() === apartment._id.toString());
+      return {
+        ...apartment,
+        profile: profile ? {
+          ...profile,
+          apartmentId: apartment._id.toString(),
+          apartmentName: apartment.name,
+        } : null,
+      };
+    });
+  }
+
+  static async getUserApartmentProfile(userId: string, apartmentId: string) {
+    return ApartmentProfile.findOne({ userId, apartmentId }).lean();
   }
 } 

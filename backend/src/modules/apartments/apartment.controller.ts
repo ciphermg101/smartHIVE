@@ -6,6 +6,7 @@ import { rolesGuard } from '@common/guards/rolesGuard';
 import { zodValidate } from '@utils/zodValidate';
 import { ApartmentService } from '@modules/apartments/apartment.service';
 import { ApartmentInviteService } from '@modules/apartments/apartmentInvite.service';
+import { ApartmentProfile } from '@modules/apartments/apartmentProfile.model';
 
 const router = Router();
 
@@ -21,6 +22,13 @@ const updateApartmentSchema = z.object({
   description: z.string().optional(),
   location: z.string().min(1).optional(),
   imageUrl: z.string().optional(),
+});
+
+const inviteSchema = z.object({
+  email: z.email(),
+  role: z.enum(['owner', 'caretaker', 'tenant']),
+  apartmentId: z.string(),
+  unitId: z.string().optional(),
 });
 
 router.post(
@@ -60,13 +68,13 @@ router.get(
 );
 
 router.get(
-  '/my',
+  '/my-apartments',
   authGuard,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = getAuth(req);
-      const apartments = await ApartmentService.listByUserProfiles(auth.userId || '');
-      res.json({ success: true, data: apartments });
+      const result = await ApartmentService.getUserApartmentsWithProfile(auth.userId || '');
+      res.json({ success: true, data: result });
     } catch (err) {
       next(err);
     }
@@ -74,12 +82,12 @@ router.get(
 );
 
 router.get(
-  '/:id',
+  '/:apartmentId',
   authGuard,
   rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const apartment = await ApartmentService.getById(req.params.id || '');
+      const apartment = await ApartmentService.getById(req.params.apartmentId || '');
       if (!apartment) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.json({ success: true, data: apartment });
     } catch (err) {
@@ -89,13 +97,13 @@ router.get(
 );
 
 router.patch(
-  '/:id',
+  '/:apartmentId',
   authGuard,
   rolesGuard({ roles: 'owner', resourceType: 'apartment' }),
   zodValidate({ body: updateApartmentSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const apartment = await ApartmentService.update(req.params.id || '', req.body);
+      const apartment = await ApartmentService.update(req.params.apartmentId || '', req.body);
       if (!apartment) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.json({ success: true, message: 'Apartment updated', data: apartment });
     } catch (err) {
@@ -105,12 +113,12 @@ router.patch(
 );
 
 router.delete(
-  '/:id',
+  '/:apartmentId',
   authGuard,
   rolesGuard({ roles: 'owner', resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const deleted = await ApartmentService.delete(req.params.id || '');
+      const deleted = await ApartmentService.delete(req.params.apartmentId || '');
       if (!deleted) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.status(204).json({ success: true, message: 'Apartment deleted' });
     } catch (err) {
@@ -119,15 +127,8 @@ router.delete(
   }
 );
 
-const inviteSchema = z.object({
-  email: z.email(),
-  role: z.enum(['owner', 'caretaker', 'tenant']),
-  apartmentId: z.string(),
-  unitId: z.string().optional(),
-});
-
 router.post(
-  '/apartment-invite',
+  '/:apartmentId/apartment-invite',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker'] }),
   zodValidate({ body: inviteSchema }),
@@ -140,6 +141,34 @@ router.post(
         clientOrigin: process.env.CLIENT_ORIGIN,
       });
       res.status(201).json({ success: true, message: 'Invite sent and profile created', data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/:apartmentId/users',
+  authGuard,
+  rolesGuard({ roles: ['owner', 'caretaker'], resourceType: 'apartment' }),
+  async (req, res, next) => {
+    try {
+      const profiles = await ApartmentProfile.find({ apartmentId: req.params.apartmentId }).lean();
+      res.json({ success: true, data: profiles });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+3
+router.delete(
+  '/:apartmentId/users/:userId',
+  authGuard,
+  rolesGuard({ roles: ['owner', 'caretaker'], resourceType: 'apartment' }),
+  async (req, res, next) => {
+    try {
+      await ApartmentProfile.deleteOne({ apartmentId: req.params.apartmentId, userId: req.params.userId });
+      res.json({ success: true, message: 'User removed' });
     } catch (err) {
       next(err);
     }

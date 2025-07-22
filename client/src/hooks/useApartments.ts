@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import type { Apartment, ApartmentForm } from '@/interfaces/apartments'
+import type { ApartmentForm } from '@/interfaces/apartments'
 
-export function useMyApartments() {
-  return useQuery({
-    queryKey: ['my-apartments'],
-    queryFn: async () => {
-      const res = await api.get('/api/v1/apartments/my')
-      return res.data.data as Apartment[]
+export function useCreateApartment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: ApartmentForm) => {
+      return api.post('/api/v1/apartments', payload)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-apartments'] })
     },
   })
 }
@@ -22,41 +24,77 @@ export function useApartments() {
   })
 }
 
-export function useApartment(id: string) {
+export function useApartment(apartmentId: string) {
   return useQuery({
-    queryKey: ['apartment', id],
+    queryKey: ['apartment', apartmentId],
     queryFn: async () => {
-      const { data } = await api.get(`/api/v1/apartments/${id}`)
+      const { data } = await api.get(`/api/v1/apartments/${apartmentId}`)
       return data.data
     },
-    enabled: !!id,
+    enabled: !!apartmentId,
   })
 }
 
-export function useCreateApartment() {
+export function useUpdateApartment(apartmentId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: ApartmentForm) => {
-      return api.post('/api/v1/apartments', payload)
+    mutationFn: (payload: { name?: string; description?: string }) => api.patch(`/api/v1/apartments/${apartmentId}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apartment', apartmentId] })
+    },
+  })
+}
+
+export function useDeleteApartment(apartmentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.delete(`/api/v1/apartments/${apartmentId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apartments'] })
+  })
+}
+
+export function useMyApartments() {
+  return useQuery({
+    queryKey: ['my-apartments'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/apartments/my-apartments')
+      return res.data.data
+    },
+  })
+}
+
+export function useApartmenTenants(apartmentId: string) {
+  return useQuery({
+    queryKey: ['apartment-users', apartmentId],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/apartments/${apartmentId}/users`)
+      return data.data
+    },
+    enabled: !!apartmentId,
+  })
+}
+
+export function useInviteApartmentUser(apartmentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: { email: string; role: string; unitId?: string }) => {
+      return api.post(`/api/v1/apartments/${apartmentId}/apartment-invite`, { ...payload, apartmentId })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-apartments'] })
+      queryClient.invalidateQueries({ queryKey: ['apartment-users', apartmentId] })
     },
   })
 }
 
-export function useUpdateApartment() {
+export function useRemoveApartmentUser(apartmentId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: string; name?: string; description?: string }) => api.patch(`/api/v1/apartments/${id}`, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apartments'] })
+    mutationFn: async (userId: string) => {
+      if (!apartmentId) throw new Error('apartmentId is required');
+      return api.delete(`/api/v1/apartments/${apartmentId}/users/${userId}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apartment-users', apartmentId] })
+    },
   })
 }
-
-export function useDeleteApartment() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => api.delete(`/api/v1/apartments/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apartments'] })
-  })
-} 

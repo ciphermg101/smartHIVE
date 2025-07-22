@@ -1,14 +1,6 @@
 import { create } from 'zustand'
 import type { ClerkUser } from '@/types/clerk'
-
-export interface ApartmentProfile {
-  _id: string
-  userId: string
-  apartmentId: string
-  role: string
-  unitId?: string
-  status: string
-}
+import type { ApartmentProfile } from '@/interfaces/apartments'
 
 interface UserState {
   user: ClerkUser | null

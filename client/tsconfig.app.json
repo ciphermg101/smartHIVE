@@ -34,6 +34,7 @@
       "@lib/*": ["./src/lib/*"],
       "@layouts/*": ["./src/layouts/*"],
       "@pages/*": ["./src/pages/*"],
+      "@features/*": ["./src/features/*"],
       "@assets/*": ["./src/assets/*"],
       "@interfaces/*": ["interfaces/*"]
     },
