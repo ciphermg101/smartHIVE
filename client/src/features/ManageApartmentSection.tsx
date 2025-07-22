@@ -133,26 +133,63 @@ const ManageApartmentSection: React.FC = () => {
       {tab === 'General' && (
         <div className="bg-white border border-gray-200 dark:bg-zinc-900 dark:border-zinc-700 rounded-xl p-6">
           <h3 className="text-gray-900 dark:text-white font-semibold">Apartment Details</h3>
-          <p className="text-gray-600 dark:text-gray-300">Description</p>
           {apartmentLoading ? (
             <div>Loading apartment...</div>
           ) : apartmentError ? (
             <div className="text-red-600">{String(apartmentError)}</div>
           ) : apartment && (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Apartment Details</h3>
-                <button onClick={openEdit} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="font-medium text-lg mb-1">{apartment.name}</div>
-                  <div className="text-gray-600 dark:text-gray-300 mb-2">{apartment.location}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">{apartment.description}</div>
+              <div className="bg-gradient-to-br from-blue-50 to-white dark:from-zinc-800 dark:to-zinc-900 rounded-xl p-6 shadow-sm border border-gray-300 dark:border-zinc-700 transition-all hover:shadow-md">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{apartment.name}</h2>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300 mb-4">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm">{apartment.location}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={openEdit}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Details
+                  </button>
                 </div>
-                {apartment.imageUrl && (
-                  <img src={apartment.imageUrl} alt="Apartment" className="rounded-lg w-full h-32 object-cover" />
-                )}
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <div className="bg-white dark:bg-zinc-800 rounded-lg p-5 border border-gray-300 dark:border-zinc-700">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                        <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Property Description
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {apartment.description || 'No description provided. Add a description to tell tenants more about this property.'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {apartment.imageUrl && (
+                    <div className="relative h-64 lg:h-auto rounded-lg overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-700">
+                      <img 
+                        src={apartment.imageUrl} 
+                        alt="Apartment" 
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
+                        <span className="text-white text-sm font-medium">Property Image</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -191,7 +228,7 @@ const ManageApartmentSection: React.FC = () => {
 
       {/* Tenants Tab */}
       {tab === 'Tenants' && (
-        <div className="space-y-6">
+  <div className="space-y-6">
           {/* Invite New Member */}
           <div className="bg-white border border-gray-200 dark:bg-zinc-900 dark:border-zinc-700 rounded-xl p-6 mb-2">
             <h3 className="text-lg font-semibold mb-2">Invite New Member</h3>

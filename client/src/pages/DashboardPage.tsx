@@ -112,7 +112,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background font-sans">
+    <div className="min-h-screen flex bg-gray-200 dark:bg-background font-sans">
       {/* Sidebar */}
       <aside
         className={`transition-all duration-300 bg-card dark:bg-zinc-900 shadow-xl border-r border-border h-screen sticky top-0 z-20 ${

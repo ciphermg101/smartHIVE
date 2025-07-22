@@ -32,7 +32,7 @@ export default function ApartmentsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-10 bg-background text-foreground min-h-screen">
+    <div className="max-w-2xl mx-auto py-10 bg-gray-200 dark:bg-background text-foreground min-h-screen">
       <div className="flex justify-end mb-4">
         <ThemeToggle />
       </div>

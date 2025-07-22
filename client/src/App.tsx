@@ -6,6 +6,7 @@ import { useUser } from '@clerk/clerk-react'
 import { useEffect } from 'react'
 import { useUserStore } from '@/store/user'
 import { Toaster } from '@components/ui/sonner'
+import { useSyncThemeWithLocalStorage } from '@/hooks/useSyncThemeWithLocalStorage'
 
 const queryClient = new QueryClient()
 
@@ -18,6 +19,7 @@ const DashboardPage = lazy(() => import('@pages/DashboardPage'))
 const Landing = lazy(() => import('@pages/Landing'))
 
 function App() {
+  useSyncThemeWithLocalStorage()
   const { user, isLoaded } = useUser()
   const setUser = useUserStore((s: any) => s.setUser)
   useEffect(() => {

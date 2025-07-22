@@ -106,7 +106,7 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="bg-slate-50 dark:bg-background overflow-x-hidden">
+    <div className="bg-gray-300 dark:bg-background overflow-x-hidden">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-200/50 dark:border-zinc-800">
         <div className="container mx-auto px-6 py-4">
@@ -119,10 +119,11 @@ export default function Landing() {
               <button onClick={() => scrollToId('features')} className="text-gray-700 dark:text-gray-200 hover:text-blue-600 transition-colors font-medium">Features</button>
               <button onClick={() => scrollToId('pricing')} className="text-gray-700 dark:text-gray-200 hover:text-blue-600 transition-colors font-medium">Pricing</button>
               <button onClick={() => scrollToId('about')} className="text-gray-700 dark:text-gray-200 hover:text-blue-600 transition-colors font-medium">About</button>
+              <Link to="/sign-in">
+                <button className="bg-gray-600 hover:bg-blue-700 text-white px-6 border-3 border-y-cyan-600 py-2 rounded-full transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-medium">Login</button>
+              </Link>
               <Link to="/sign-up">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
-                  Get Started
-                </button>
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-medium">Get Started</button>
               </Link>
               <ThemeToggle />
             </div>
@@ -322,7 +323,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-300 dark:bg-gray-900 text-gray-700 dark:text-gray-400 py-12">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-2">
@@ -330,32 +331,32 @@ export default function Landing() {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold text-lg">⚡</span>
                 </div>
-                <span className="text-2xl font-bold">smartHIVE</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">smartHIVE</span>
               </div>
-              <p className="text-gray-400 max-w-md">
+              <p className="text-gray-700 dark:text-gray-400 max-w-md">
                 The future of apartment management. Streamline your operations, delight your tenants, and grow your business with our AI-powered platform.
               </p>
             </div>
             <div>
-              <h3 className="font-bold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('features') }}>Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('pricing') }}>Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+              <h3 className="font-bold mb-4 text-gray-900 dark:text-white">Product</h3>
+              <ul className="space-y-2 text-gray-700 dark:text-gray-400">
+                <li><a href="#features" className="hover:text-blue-600 dark:hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('features') }}>Features</a></li>
+                <li><a href="#pricing" className="hover:text-blue-600 dark:hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('pricing') }}>Pricing</a></li>
+                <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">API</a></li>
+                <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Integrations</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#about" className="hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('about') }}>About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+              <h3 className="font-bold mb-4 text-gray-900 dark:text-white">Company</h3>
+              <ul className="space-y-2 text-gray-700 dark:text-gray-400">
+                <li><a href="#about" className="hover:text-blue-600 dark:hover:text-white transition-colors" onClick={e => { e.preventDefault(); scrollToId('about') }}>About</a></li>
+                <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Careers</a></li>
+                <li><a href="#" className="hover:text-blue-600 dark:hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-700 dark:text-gray-400">
             <p>&copy; {new Date().getFullYear()} smartHIVE. All rights reserved.</p>
           </div>
         </div>
