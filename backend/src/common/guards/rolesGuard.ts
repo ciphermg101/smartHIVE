@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Apartment } from '@modules/apartments/apartment.model';
 import { Unit } from '@modules/units/unit.model';
-import { Types } from 'mongoose';
 import { errorHandler } from '@common/error-handler/errorHandler';
 import { ApartmentService } from '@modules/apartments/apartment.service';
 
@@ -14,18 +13,28 @@ export function rolesGuard(options: RolesGuardOptions) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { roles, resourceType } = options;
-
-      const userId = (req as any).auth?.userId || (req as any).user?.id;
+      const userId = (await (req as any).auth?.())?.userId || (req as any).user?.id;
       const apartmentId =
-        req.params.apartmentId ||
-        req.body.apartmentId ||
-        (typeof req.query.apartmentId === 'string' ? req.query.apartmentId : undefined);
+        req?.params?.apartmentId ||
+        req?.body?.apartmentId ||
+        req?.query?.apartmentId;
 
-      if (!userId || !apartmentId || !Types.ObjectId.isValid(apartmentId)) {
+      if (!apartmentId || typeof apartmentId !== 'string') {
         return errorHandler(
           {
             status: 400,
-            message: 'Missing or invalid user/apartment ID.',
+            message: 'Missing or invalid apartmentId in request',
+          },
+          req, res, next
+        );
+      }
+
+
+      if (!userId) {
+        return errorHandler(
+          {
+            status: 400,
+            message: 'Missing user ID.',
           }, req, res, next
         );
       }
@@ -70,11 +79,11 @@ export function rolesGuard(options: RolesGuardOptions) {
 
       if (resourceType === 'unit') {
         const unitId = req.params.id || req.body.unitId;
-        if (!unitId || !Types.ObjectId.isValid(unitId)) {
+        if (!unitId) {
           return errorHandler(
             {
               status: 400,
-              message: 'Invalid unit ID.',
+              message: 'Missing unit ID.',
             }, req, res, next
           );
         }
@@ -90,7 +99,6 @@ export function rolesGuard(options: RolesGuardOptions) {
         }
 
         const apartment = await Apartment.findById(unit.apartmentId).lean();
-
         const isAuthorized =
           (apartment && String(apartment.ownerId) === String(userId)) ||
           (unit.tenantId && String(unit.tenantId) === String(userId));
@@ -107,6 +115,7 @@ export function rolesGuard(options: RolesGuardOptions) {
 
       return next();
     } catch (err) {
+      console.error('rolesGuard caught error:', err);
       return errorHandler(err, req, res, next);
     }
   };

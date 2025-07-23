@@ -3,6 +3,9 @@ export interface ImageUploadOptions {
     maxHeight?: number;
     quality?: number;
     maxSizeBytes?: number;
+    folder?: string;
+    apartmentName?: string;
+    unitNumber?: string;
 }
 
 export interface ImageUploadProgress {
@@ -84,19 +87,56 @@ export function validateImageFile(
     return { isValid: true };
 }
 
+/**
+ * Generate a clean folder path for Cloudinary
+ */
+export function generateCloudinaryFolderPath(options: {
+    apartmentName?: string;
+    unitNumber?: string;
+    customFolder?: string;
+}): string {
+    const { apartmentName, unitNumber, customFolder } = options;
+
+    // If custom folder is provided, use it as-is
+    if (customFolder) {
+        return customFolder;
+    }
+
+    const cleanName = (name: string) =>
+        name.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+    let folderPath = 'apartments-images';
+
+    if (apartmentName) {
+        const cleanedApartmentName = cleanName(apartmentName);
+        folderPath += `/${cleanedApartmentName}`;
+
+        if (unitNumber) {
+            const cleanedUnitNumber = cleanName(unitNumber.toString());
+            folderPath += `/unit-${cleanedUnitNumber}`;
+        }
+    }
+
+    return folderPath;
+}
+
 export async function uploadImageToCloudinary(
     file: File,
     cloudinaryConfig: {
         uploadUrl: string;
         uploadPreset: string;
     },
-    options: ImageUploadOptions & { folder?: string } = {},
+    options: ImageUploadOptions = {},
     onProgress?: (progress: ImageUploadProgress) => void
 ): Promise<string> {
     const validation = validateImageFile(file, options);
     if (!validation.isValid) {
         throw new Error(validation.error);
     }
+
     onProgress?.({ progress: 10, stage: 'compressing' });
     const compressedFile = await compressImage(file, options);
 
@@ -107,10 +147,21 @@ export async function uploadImageToCloudinary(
     formData.append("upload_preset", cloudinaryConfig.uploadPreset);
     formData.append("quality", "auto:good");
     formData.append("fetch_format", "auto");
-    
-    // Add folder if specified
-    if (options.folder) {
-        formData.append("folder", options.folder);
+
+    const folderPath = generateCloudinaryFolderPath({
+        apartmentName: options.apartmentName,
+        unitNumber: options.unitNumber,
+        customFolder: options.folder
+    });
+
+    if (folderPath) {
+        formData.append("folder", folderPath); 
+        formData.append("asset_folder", folderPath);
+        
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const publicId = `${folderPath}/${timestamp}_${randomSuffix}`;
+        formData.append("public_id", publicId);
     }
 
     return new Promise((resolve, reject) => {
@@ -148,15 +199,37 @@ export async function uploadImageToCloudinary(
     });
 }
 
-export async function uploadImage(
+// Convenience function for apartment images
+export async function uploadApartmentImage(
     file: File,
-    cloudinaryConfig: {
-        uploadUrl: string;
-        uploadPreset: string;
-    },
-    options: ImageUploadOptions = {}
+    cloudinaryConfig: { uploadUrl: string; uploadPreset: string },
+    apartmentName: string,
+    options: Omit<ImageUploadOptions, 'apartmentName'> = {},
+    onProgress?: (progress: ImageUploadProgress) => void
 ): Promise<string> {
-    return uploadImageToCloudinary(file, cloudinaryConfig, options);
+    return uploadImageToCloudinary(
+        file,
+        cloudinaryConfig,
+        { ...options, apartmentName },
+        onProgress
+    );
+}
+
+// Convenience function for unit images
+export async function uploadUnitImage(
+    file: File,
+    cloudinaryConfig: { uploadUrl: string; uploadPreset: string },
+    apartmentName: string,
+    unitNumber: string,
+    options: Omit<ImageUploadOptions, 'apartmentName' | 'unitNumber'> = {},
+    onProgress?: (progress: ImageUploadProgress) => void
+): Promise<string> {
+    return uploadImageToCloudinary(
+        file,
+        cloudinaryConfig,
+        { ...options, apartmentName, unitNumber },
+        onProgress
+    );
 }
 
 export function getFileSize(bytes: number): string {

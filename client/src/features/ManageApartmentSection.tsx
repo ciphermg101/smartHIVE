@@ -4,7 +4,7 @@ import { useApartment, useApartmenTenants, useInviteApartmentUser, useRemoveApar
 import { Dialog, DialogContent, DialogTitle } from '@components/ui/dialog';
 import { toast } from 'sonner';
 import {
-  uploadImageToCloudinary,
+  uploadApartmentImage,
   validateImageFile,
   createPreviewUrl,
   cleanupPreviewUrl,
@@ -94,6 +94,7 @@ const ManageApartmentSection: React.FC = () => {
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setUploading(false);
     setError(null);
 
     try {
@@ -101,27 +102,25 @@ const ManageApartmentSection: React.FC = () => {
       if (selectedFile) {
         try {
           setUploading(true);
-          const folderName = selectedProfile?.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-            
-          imageUrl = await uploadImageToCloudinary(
+          imageUrl = await uploadApartmentImage(
             selectedFile,
             imageUploadConfig,
+            editForm.name,
             {
               maxWidth: 1200,
               maxHeight: 1200,
               quality: 0.8,
               maxSizeBytes: 3 * 1024 * 1024,
-              folder: `apartments/${folderName}`
             },
-            (progress) => setUploadProgress(progress)
+            (progress: ImageUploadProgress) => setUploadProgress(progress)
           );
+          setUploading(false);
         } catch (error) {
-          setError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMessage = `Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          setError(errorMessage);
           setUploading(false);
           setSaving(false);
+          setUploadProgress(null);
           return;
         }
       }
@@ -135,25 +134,25 @@ const ManageApartmentSection: React.FC = () => {
         {
           onSuccess: () => {
             setEditOpen(false);
-            setSaving(false);
-            setUploading(false);
-            setUploadProgress(null);
+            resetFormStates();
             toast.success('Apartment updated');
           },
           onError: (err: any) => {
             setError(err?.response?.data?.message || 'Failed to update apartment');
-            setSaving(false);
-            setUploading(false);
-            setUploadProgress(null);
+            resetFormStates();
           },
         }
       );
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
-      setSaving(false);
-      setUploading(false);
-      setUploadProgress(null);
+      resetFormStates();
     }
+  }
+
+  function resetFormStates() {
+    setSaving(false);
+    setUploading(false);
+    setUploadProgress(null);
   }
 
   function handleInviteChange(idx: number, field: string, value: string) {
@@ -172,9 +171,9 @@ const ManageApartmentSection: React.FC = () => {
     e.preventDefault();
     setInviting(true);
     setError(null);
-  
+
     type InviteResult = { success: boolean; email: string; error?: string };
-    
+
     Promise.all(
       inviteList.map(invite =>
         inviteUser.mutateAsync({ email: invite.email, role: invite.role, unitId: apartmentId })

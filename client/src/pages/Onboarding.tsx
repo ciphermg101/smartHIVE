@@ -16,12 +16,12 @@ import type {
   ApartmentWithProfile,
 } from "@/interfaces/apartments";
 import { toast } from "sonner";
-import { 
-  uploadImageToCloudinary, 
-  validateImageFile, 
+import {
+  uploadApartmentImage,
+  validateImageFile,
   createPreviewUrl,
   cleanupPreviewUrl,
-  type ImageUploadProgress 
+  type ImageUploadProgress
 } from "@utils/imageUpload";
 
 const imageUploadConfig = {
@@ -67,7 +67,7 @@ export default function OnboardingPage() {
 
     setSelectedFile(file);
     setFormError(null);
-    
+
     const newPreviewUrl = createPreviewUrl(file);
     setPreviewUrl(newPreviewUrl);
   }
@@ -93,22 +93,17 @@ export default function OnboardingPage() {
       let imageUrl = "";
       if (selectedFile) {
         try {
-          const folderName = form.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-            
-          imageUrl = await uploadImageToCloudinary(
+          imageUrl = await uploadApartmentImage(
             selectedFile,
             imageUploadConfig,
+            form.name,
             {
               maxWidth: 1200,
               maxHeight: 1200,
               quality: 0.8,
               maxSizeBytes: 3 * 1024 * 1024,
-              folder: `apartments/${folderName}`
             },
-            (progress) => setUploadProgress(progress)
+            (progress: ImageUploadProgress) => setUploadProgress(progress)
           );
         } catch (error) {
           setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -159,7 +154,7 @@ export default function OnboardingPage() {
     setSelectedProfile(apartment);
     navigate("/dashboard");
   }
-  
+
   const handleModalClose = (open: boolean) => {
     if (!open && previewUrl) {
       cleanupPreviewUrl(previewUrl);
@@ -255,10 +250,10 @@ export default function OnboardingPage() {
                       {uploadProgress.stage === 'uploading' && "Uploading to Cloudinary..."}
                       {uploadProgress.stage === 'complete' && "Upload complete!"}
                     </div>
-                    
+
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress.progress}%` }}
                       />
                     </div>
@@ -304,7 +299,7 @@ export default function OnboardingPage() {
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-64 w-full shimmer" />
             ))
-          ) : apartments?.length? (
+          ) : apartments?.length ? (
             apartments.map((apartment: ApartmentWithProfile, idx: number) => (
               <div
                 key={apartment._id}
@@ -315,9 +310,8 @@ export default function OnboardingPage() {
                 style={{ cursor: "pointer" }}
               >
                 <div
-                  className={`relative w-full h-64 transition-transform duration-500 transform ${
-                    flippedIndex === idx ? "rotate-y-180" : ""
-                  } preserve-3d`}
+                  className={`relative w-full h-64 transition-transform duration-500 transform ${flippedIndex === idx ? "rotate-y-180" : ""
+                    } preserve-3d`}
                 >
                   {/* Front Side */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-zinc-900 rounded-xl shadow-lg backface-hidden overflow-hidden">

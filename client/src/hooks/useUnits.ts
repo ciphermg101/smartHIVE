@@ -33,11 +33,11 @@ export function useUnits(apartmentId?: string) {
   return useQuery<Unit[]>({
     queryKey: ['units', apartmentId],
     queryFn: async () => {
-      const { data } = await api.get(`/units`, { params: { apartmentId } });
-      return data.data;
+      const res = await api.get('/units', { params: { apartmentId } });
+      const response=res.data.data.data;
+      return response;
     },
-    enabled: !!apartmentId && apartmentId.trim() !== '',
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -48,7 +48,6 @@ export function useUnit(id: string, apartmentId: string) {
       const { data } = await api.get(`/units/${id}`, { params: { apartmentId } });
       return data.data;
     },
-    enabled: !!id && !!apartmentId,
   });
 }
 

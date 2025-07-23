@@ -45,7 +45,7 @@ router.post(
 router.get(
   '/',
   authGuard,
-  rolesGuard({ roles: ['owner', 'tenant', 'caretaker'], resourceType: 'apartment' }),
+  rolesGuard({ roles: ['owner', 'caretaker'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { apartmentId } = req.query;
@@ -60,7 +60,7 @@ router.get(
 router.get(
   '/:id',
   authGuard,
-  rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'unit' }),
+  rolesGuard({ roles: ['owner', 'caretaker', 'tenant'], resourceType: 'unit' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const unit = await UnitService.getById(req.params.id || '');
