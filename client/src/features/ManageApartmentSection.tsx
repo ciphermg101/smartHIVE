@@ -38,7 +38,6 @@ function getInitials(name?: string) {
 const ManageApartmentSection: React.FC = () => {
   const selectedProfile = useApartmentStore((s) => s.selectedProfile);
   const apartmentId = selectedProfile?.profile.apartmentId || '';
-  console.log(apartmentId);
   const { data: apartment, isLoading: apartmentLoading, error: apartmentError } = useApartment(apartmentId);
   const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmenTenants(apartmentId);
   const inviteUser = useInviteApartmentUser(apartmentId);

@@ -1,6 +1,6 @@
 import { Unit, IUnit } from "@modules/units/unit.model";
 import { Apartment } from "@modules/apartments/apartment.model";
-import { Types } from "mongoose";
+import { AppException } from '@common/error-handler/errorHandler';
 
 export class UnitService {
   static async create(data: {
@@ -10,53 +10,60 @@ export class UnitService {
     imageUrl?: string;
   }): Promise<IUnit> {
     try {
-      if (!Types.ObjectId.isValid(data.apartmentId))
-        throw Object.assign(new Error("Invalid apartmentId"), { status: 400 });
       const apartment = await Apartment.findById(data.apartmentId);
-      if (!apartment)
-        throw Object.assign(new Error("Apartment not found"), { status: 404 });
+      if (!apartment) {
+        throw new AppException('Apartment not found', 404);
+      }
+
       const unitData: any = {
         unitNo: data.unitNo,
         rent: data.rent,
         apartmentId: data.apartmentId,
       };
-      
+
       if (data.imageUrl) {
         unitData.imageUrl = data.imageUrl;
       }
-      
+
       const unit = await Unit.create(unitData);
 
       apartment.units.push(unit._id as any);
       await apartment.save();
       return unit.toObject();
-    } catch (err) {
-      throw err;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 
   static async listByApartment(apartmentId: string): Promise<IUnit[]> {
     try {
-      if (!Types.ObjectId.isValid(apartmentId)) {
-        throw Object.assign(new Error("Invalid apartmentId"), { status: 400 });
-      }
-      
-      // Convert string ID to ObjectId for the query
-      const objectId = new Types.ObjectId(apartmentId);
-      const units = await Unit.find({ apartmentId: objectId }).lean();
+      const units = await Unit.find({ apartmentId }).lean();
       return units;
-    } catch (err) {
-      console.error('Error in listByApartment:', err);
-      throw err;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 
   static async getById(id: string): Promise<IUnit | null> {
     try {
-      if (!Types.ObjectId.isValid(id)) return null;
-      return Unit.findById(id).lean();
-    } catch (err) {
-      throw err;
+      const unit = await Unit.findById(id).lean();
+
+      if (!unit) {
+        throw new AppException('Unit not found', 404);
+      }
+
+      return unit;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 
@@ -65,28 +72,40 @@ export class UnitService {
     data: Partial<Pick<IUnit, "unitNo" | "rent" | "tenantId" | "imageUrl">>
   ): Promise<IUnit | null> {
     try {
-      if (!Types.ObjectId.isValid(id))
-        throw Object.assign(new Error("Invalid unit id"), { status: 400 });
-      return Unit.findByIdAndUpdate(id, data, { new: true }).lean();
-    } catch (err) {
-      throw err;
+      const unit = await Unit.findByIdAndUpdate(id, data, { new: true }).lean();
+
+      if (!unit) {
+        throw new AppException('Unit not found', 404);
+      }
+
+      return unit;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 
   static async delete(id: string): Promise<boolean> {
     try {
-      if (!Types.ObjectId.isValid(id))
-        throw Object.assign(new Error("Invalid unit id"), { status: 400 });
       const unit = await Unit.findByIdAndDelete(id);
-      if (!unit)
-        throw Object.assign(new Error("Unit not found"), { status: 404 });
+
+      if (!unit) {
+        throw new AppException('Unit not found', 404);
+      }
+
       await Apartment.updateOne(
         { _id: unit.apartmentId },
         { $pull: { units: unit._id } }
       );
+
       return true;
-    } catch (err) {
-      throw err;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 }

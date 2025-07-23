@@ -1,4 +1,5 @@
 import { User, IUser } from '@modules/users/user.model';
+import { AppException } from '@common/error-handler/errorHandler';
 
 export interface ClerkWebhookPayload {
   object: string;
@@ -9,43 +10,84 @@ export interface ClerkWebhookPayload {
 export class UserService {
   static async getMe(clerkUserId: string): Promise<IUser | null> {
     try {
-    return User.findOne({ clerkUserId }).lean();
-    } catch (err) {
-      throw err;
+      if (!clerkUserId) {
+        throw new AppException('User ID is required', 400);
+      }
+
+      const user = await User.findOne({ clerkUserId }).lean();
+
+      if (!user) {
+        throw new AppException('User not found', 404);
+      }
+
+      return user;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
 
   static async listUsers(): Promise<IUser[]> {
     try {
-    return User.find({}).lean();
-    } catch (err) {
-      throw err;
-  }
+      return await User.find({}).lean();
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
+    }
   }
 
   static async clerkSync(payload: any): Promise<{ success: boolean }> {
     try {
-    const { type, data } = payload;
-    const clerkUserId = data.id as string;
+      const { type, data } = payload;
+      const clerkUserId = data.id as string;
       const email = data.email as string;
-      if (!clerkUserId) throw Object.assign(new Error('Missing Clerk user id'), { status: 400 });
-      if (!email) throw Object.assign(new Error('Missing Clerk user email'), { status: 400 });
-      if (type === 'user.created') {
-        await User.create({ clerkUserId, email });
-      } else if (type === 'user.updated') {
-        await User.findOneAndUpdate(
-          { clerkUserId },
-          { email },
-          { new: true }
-        );
-      } else if (type === 'user.deleted') {
-        await User.findOneAndDelete({ clerkUserId });
-      } else {
-        throw Object.assign(new Error('Unsupported Clerk webhook event type'), { status: 400 });
+
+      if (!clerkUserId) {
+        throw new AppException('Missing Clerk user ID', 400);
       }
+
+      if (!email) {
+        throw new AppException('Missing user email', 400);
+      }
+
+      switch (type) {
+        case 'user.created':
+          await User.create({ clerkUserId, email });
+          break;
+
+        case 'user.updated':
+          const updatedUser = await User.findOneAndUpdate(
+            { clerkUserId },
+            { email },
+            { new: true, runValidators: true }
+          );
+
+          if (!updatedUser) {
+            throw new AppException('User not found for update', 404);
+          }
+          break;
+
+        case 'user.deleted':
+          const deletedUser = await User.findOneAndDelete({ clerkUserId });
+          if (!deletedUser) {
+            throw new AppException('User not found for deletion', 404);
+          }
+          break;
+
+        default:
+          throw new AppException('Unsupported Clerk webhook event type', 400);
+      }
+
       return { success: true };
-    } catch (err) {
-      throw err;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
     }
   }
-} 
+}

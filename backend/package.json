@@ -1,15 +1,16 @@
 {
-  "name": "smartHive Backend",
+  "name": "smarthive-backend",
   "version": "1.0.0",
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc && pnpm copy:docs",
+    "build": "tsc && pnpm copy:docs && pnpm sentry:sourcemaps",
     "copy:docs": "cp -r src/docs/*.yaml dist/docs/",
     "start": "node -r module-alias/register dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec ts-node -r tsconfig-paths/register src/server.ts",
     "lint": "eslint src --ext .ts",
-    "swagger:validate": "swagger-cli validate src/docs/openapi.bundled.yaml"
+    "swagger:validate": "swagger-cli validate src/docs/openapi.bundled.yaml",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cipher-corp --project smart-hive ./dist && sentry-cli sourcemaps upload --org cipher-corp --project smart-hive ./dist"
   },
   "keywords": [],
   "author": "cipher_101",

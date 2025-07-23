@@ -1,4 +1,3 @@
-import '@common/sentry/sentry';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -16,18 +15,19 @@ import { unitRouter } from '@modules/units';
 import { paymentRouter } from '@modules/rent';
 import { issueRouter } from '@modules/issues';
 import { userRouter } from '@modules/users';
+import { requireApiVersion } from '@common/middleware/requireApiVersion';
 
 dotenv.config();
-
 const app = express();
-app.use(clerkMiddleware())
 
-// Security
+// Security middleware
 app.use(helmet());
+
 app.use(cors({
   origin: process.env.CLIENT_ORIGIN,
   credentials: true,
 }));
+
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -35,26 +35,28 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-// Body parsing
+// Database connection
+connectDB();
+
+// Body parsing middleware
 app.use(json());
 app.use(urlencoded({ extended: true }));
+
+// Clerk authentication middleware
+app.use(clerkMiddleware())
 
 // Response interceptor
 app.use(responseInterceptor);
 
-// Connect to DB
-connectDB();
-
-// Register modules/routes here
+// API routes
+app.use(requireApiVersion);
 app.use('/api/v1/apartments', apartmentRouter);
 app.use('/api/v1/units', unitRouter);
 app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/issues', issueRouter);
 app.use('/api/v1/users', userRouter);
 
-// Swagger docs
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 
 app.use(errorHandler);
 

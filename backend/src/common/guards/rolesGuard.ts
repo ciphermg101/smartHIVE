@@ -16,7 +16,10 @@ export function rolesGuard(options: RolesGuardOptions) {
       const { roles, resourceType } = options;
 
       const userId = (req as any).auth?.userId || (req as any).user?.id;
-      const apartmentId = req.params.apartmentId ||req.body.apartmentId || req.query.apartmentId;
+      const apartmentId =
+        req.params.apartmentId ||
+        req.body.apartmentId ||
+        (typeof req.query.apartmentId === 'string' ? req.query.apartmentId : undefined);
 
       if (!userId || !apartmentId || !Types.ObjectId.isValid(apartmentId)) {
         return errorHandler(

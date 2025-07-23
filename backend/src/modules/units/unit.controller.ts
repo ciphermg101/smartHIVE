@@ -45,17 +45,11 @@ router.post(
 router.get(
   '/',
   authGuard,
-  rolesGuard({ roles: ['owner', 'tenant'], resourceType: 'apartment' }),
+  rolesGuard({ roles: ['owner', 'tenant', 'caretaker'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { apartmentId } = req.query;
-      if (!apartmentId || typeof apartmentId !== 'string') {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'apartmentId is required as a query parameter' 
-        });
-      }
-      const units = await UnitService.listByApartment(apartmentId);
+      const units = await UnitService.listByApartment(apartmentId as string);
       res.json({ success: true, data: units });
     } catch (err) {
       next(err);

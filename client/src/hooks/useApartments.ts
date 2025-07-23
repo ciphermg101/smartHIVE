@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@lib/axios'
-import type { ApartmentForm } from '@/interfaces/apartments'
+import type { ApartmentForm, ApartmentWithProfile } from '@/interfaces/apartments'
 
 export function useCreateApartment() {
   const queryClient = useQueryClient()
@@ -14,22 +14,13 @@ export function useCreateApartment() {
   })
 }
 
-export function useApartments() {
-  return useQuery({
-    queryKey: ['apartments'],
-    queryFn: async () => {
-      const { data } = await api.get('/apartments')
-      return data.data
-    },
-  })
-}
-
 export function useApartment(apartmentId: string) {
-  return useQuery({
+  return useQuery<ApartmentWithProfile>({
     queryKey: ['apartment', apartmentId],
     queryFn: async () => {
       const { data } = await api.get(`/apartments/${apartmentId}`)
-      return data.data
+      const response = data.data.data;
+      return response;
     },
     enabled: !!apartmentId,
   })
@@ -58,7 +49,8 @@ export function useMyApartments() {
     queryKey: ['my-apartments'],
     queryFn: async () => {
       const res = await api.get('/apartments/my-apartments')
-      return res.data.data
+      const response = res.data.data.data;
+      return response;
     },
   })
 }
@@ -68,7 +60,8 @@ export function useApartmenTenants(apartmentId: string) {
     queryKey: ['apartment-users', apartmentId],
     queryFn: async () => {
       const { data } = await api.get(`/apartments/${apartmentId}/users`)
-      return data.data
+      const response = data.data;
+      return response;
     },
     enabled: !!apartmentId,
   })

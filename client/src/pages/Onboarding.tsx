@@ -48,7 +48,7 @@ export default function OnboardingPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
 
-  const { data, isLoading } = useMyApartments();
+  const { data: apartments, isLoading } = useMyApartments();
   const createApartment = useCreateApartment();
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -111,7 +111,6 @@ export default function OnboardingPage() {
             (progress) => setUploadProgress(progress)
           );
         } catch (error) {
-          console.error("Upload error:", error);
           setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
           setUploading(false);
           setUploadProgress(null);
@@ -305,10 +304,10 @@ export default function OnboardingPage() {
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-64 w-full shimmer" />
             ))
-          ) : data && data.length > 0 ? (
-            data.map((apartment: any, idx: number) => (
+          ) : apartments?.length? (
+            apartments.map((apartment: ApartmentWithProfile, idx: number) => (
               <div
-                key={apartment.id}
+                key={apartment._id}
                 className="group perspective"
                 onClick={() =>
                   setFlippedIndex(flippedIndex === idx ? null : idx)
