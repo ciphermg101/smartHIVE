@@ -59,7 +59,6 @@ export function useApartmenTenants(apartmentId: string) {
     queryKey: ['apartment-tenants', apartmentId],
     queryFn: async () => {
       const { data } = await api.get(`/apartments/${apartmentId}/tenants`)
-      console.log("tenants", data)
       const response = data.data.data;
       return response;
     },

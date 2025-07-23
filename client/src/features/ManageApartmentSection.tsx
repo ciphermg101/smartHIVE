@@ -177,7 +177,7 @@ const ManageApartmentSection: React.FC = () => {
     
     Promise.all(
       inviteList.map(invite =>
-        inviteUser.mutateAsync({ email: invite.email, role: invite.role })
+        inviteUser.mutateAsync({ email: invite.email, role: invite.role, unitId: apartmentId })
           .then(() => ({ success: true, email: invite.email }))
           .catch((err): InviteResult => ({
             success: false,
