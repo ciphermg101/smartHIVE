@@ -88,7 +88,6 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const apartment = await ApartmentService.getById(req.params.apartmentId || '');
-      if (!apartment) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.json({ success: true, data: apartment });
     } catch (err) {
       next(err);
@@ -104,7 +103,6 @@ router.patch(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const apartment = await ApartmentService.update(req.params.apartmentId || '', req.body);
-      if (!apartment) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.json({ success: true, message: 'Apartment updated', data: apartment });
     } catch (err) {
       next(err);
@@ -119,7 +117,6 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const deleted = await ApartmentService.delete(req.params.apartmentId || '');
-      if (!deleted) return res.status(404).json({ success: false, message: 'Apartment not found' });
       res.status(204).json({ success: true, message: 'Apartment deleted' });
     } catch (err) {
       next(err);
@@ -148,27 +145,27 @@ router.post(
 );
 
 router.get(
-  '/:apartmentId/users',
+  '/:apartmentId/tenants',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker'], resourceType: 'apartment' }),
   async (req, res, next) => {
     try {
-      const profiles = await ApartmentProfile.find({ apartmentId: req.params.apartmentId }).lean();
-      res.json({ success: true, data: profiles });
+      const tenants = await ApartmentProfile.find({ apartmentId: req.params.apartmentId }).lean();
+      res.json({ success: true, data: tenants });
     } catch (err) {
       next(err);
     }
   }
 );
-3
+
 router.delete(
-  '/:apartmentId/users/:userId',
+  '/:apartmentId/tenants/:tenantId',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker'], resourceType: 'apartment' }),
   async (req, res, next) => {
     try {
-      await ApartmentProfile.deleteOne({ apartmentId: req.params.apartmentId, userId: req.params.userId });
-      res.json({ success: true, message: 'User removed' });
+      await ApartmentProfile.deleteOne({ apartmentId: req.params.apartmentId, tenantId: req.params.tenantId });
+      res.json({ success: true, message: 'Tenant removed' });
     } catch (err) {
       next(err);
     }

@@ -22,7 +22,6 @@ export function useApartment(apartmentId: string) {
       const response = data.data.data;
       return response;
     },
-    enabled: !!apartmentId,
   })
 }
 
@@ -57,24 +56,24 @@ export function useMyApartments() {
 
 export function useApartmenTenants(apartmentId: string) {
   return useQuery({
-    queryKey: ['apartment-users', apartmentId],
+    queryKey: ['apartment-tenants', apartmentId],
     queryFn: async () => {
-      const { data } = await api.get(`/apartments/${apartmentId}/users`)
-      const response = data.data;
+      const { data } = await api.get(`/apartments/${apartmentId}/tenants`)
+      console.log("tenants", data)
+      const response = data.data.data;
       return response;
     },
-    enabled: !!apartmentId,
   })
 }
 
 export function useInviteApartmentUser(apartmentId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: { email: string; role: string; unitId?: string }) => {
+    mutationFn: async (payload: { email: string; role: string; unitId: string }) => {
       return api.post(`/apartments/${apartmentId}/apartment-invite`, { ...payload, apartmentId })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apartment-users', apartmentId] })
+      queryClient.invalidateQueries({ queryKey: ['apartment-tenants', apartmentId] })
     },
     onError: (error: any) => {
       throw error.response?.data?.message || 'Failed to send invitation';
@@ -87,10 +86,10 @@ export function useRemoveApartmentUser(apartmentId: string) {
   return useMutation({
     mutationFn: async (userId: string) => {
       if (!apartmentId) throw new Error('apartmentId is required');
-      return api.delete(`/apartments/${apartmentId}/users/${userId}`)
+      return api.delete(`/apartments/${apartmentId}/tenants/${userId}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apartment-users', apartmentId] })
+      queryClient.invalidateQueries({ queryKey: ['apartment-tenants', apartmentId] })
     },
   })
 }
