@@ -1,91 +1,192 @@
 Apartment:
   type: object
+  description: Represents an apartment building or complex
+  required:
+    - _id
+    - name
+    - location
+    - ownerId
+    - createdAt
+    - updatedAt
   properties:
     _id:
       type: string
+      format: uuid
+      description: Unique identifier for the apartment
+      example: 507f1f77bcf86cd799439011
     name:
       type: string
+      description: Name of the apartment building
+      example: "Sunset Villas"
     description:
       type: string
+      description: Detailed description of the apartment
+      example: "Luxury apartment complex with modern amenities"
     location:
       type: string
+      description: Physical address of the apartment
+      example: "123 Main St, Nairobi, Kenya"
     imageUrl:
       type: string
+      format: uri
+      description: URL to the apartment's main image
+      example: "https://example.com/images/sunset-villas.jpg"
     ownerId:
       type: string
-      description: Clerk user ID of the owner
+      description: Clerk user ID of the apartment owner
+      example: "user_2abcdefghijklmnopqrstuvwxyz"
     caretakers:
       type: array
       items:
         type: string
-      description: Array of Clerk user IDs
+        format: uuid
+      description: Array of Clerk user IDs with caretaker access
+      example: ["user_2abcdefghijklmnopqrstuvwxy"]
     tenants:
       type: array
       items:
         type: string
-      description: Array of Clerk user IDs
+        format: uuid
+      description: Array of Clerk user IDs of tenants
+      example: ["user_2abcdefghijklmnopqrstuvwxy"]
     units:
       type: array
       items:
         type: string
+        format: uuid
+      description: Array of unit IDs belonging to this apartment
+      example: ["507f1f77bcf86cd799439012"]
     createdAt:
       type: string
       format: date-time
+      description: Timestamp when the apartment was created
+      example: "2023-01-01T00:00:00Z"
     updatedAt:
       type: string
       format: date-time
+      description: Timestamp when the apartment was last updated
+      example: "2023-01-01T00:00:00Z"
 ApartmentCreate:
   type: object
+  description: Schema for creating a new apartment
   required:
     - name
     - location
-    - ownerId
   properties:
     name:
       type: string
+      minLength: 1
+      description: Name of the apartment building
+      example: "Sunset Villas"
     description:
       type: string
+      description: Detailed description of the apartment
+      example: "Luxury apartment complex with modern amenities"
     location:
       type: string
+      minLength: 1
+      description: Physical address of the apartment
+      example: "123 Main St, Nairobi, Kenya"
     imageUrl:
       type: string
+      format: uri
+      description: URL to the apartment's main image
+      example: "https://example.com/images/sunset-villas.jpg"
     ownerId:
       type: string
+      description: Clerk user ID of the apartment owner
+      example: "user_2abcdefghijklmnopqrstuvwxyz"
+      
 ApartmentUpdate:
   type: object
+ApartmentUpdate:
+  type: object
+  description: Schema for updating an existing apartment
   properties:
     name:
       type: string
+      minLength: 1
+      description: Updated name of the apartment building
+      example: "Sunset Villas II"
     description:
       type: string
+      description: Updated description of the apartment
+      example: "Renovated luxury apartment complex with new amenities"
     location:
       type: string
+      minLength: 1
+      description: Updated physical address of the apartment
+      example: "123 Main St, Westlands, Nairobi, Kenya"
     imageUrl:
       type: string
+      format: uri
+      description: Updated URL to the apartment's main image
+      example: "https://example.com/images/sunset-villas-ii.jpg"
+
 Unit:
   type: object
+  description: Represents a rental unit within an apartment building
+  required:
+    - _id
+    - unitNo
+    - rent
+    - apartmentId
+    - status
+    - createdAt
+    - updatedAt
   properties:
     _id:
       type: string
+      format: uuid
+      description: Unique identifier for the unit
+      example: "507f1f77bcf86cd799439011"
     unitNo:
       type: string
+      description: Unit number or identifier
+      example: "A101"
     rent:
       type: number
+      format: float
+      minimum: 0
+      description: Monthly rent amount for the unit
+      example: 1500.00
     tenantId:
       type: string
-      description: Clerk user ID of the tenant
+      format: uuid
+      nullable: true
+      description: Clerk user ID of the current tenant (if any)
+      example: "user_2abcdefghijklmnopqrstuvwxy"
     apartmentId:
       type: string
+      format: uuid
+      description: ID of the apartment this unit belongs to
+      example: "507f1f77bcf86cd799439012"
     status:
       type: string
+      enum: [VACANT, OCCUPIED, MAINTENANCE]
+      default: VACANT
+      description: Current status of the unit
+      example: "OCCUPIED"
+    imageUrl:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to an image of the unit
+      example: "https://example.com/images/unit-a101.jpg"
     createdAt:
       type: string
       format: date-time
+      description: Timestamp when the unit was created
+      example: "2023-01-01T00:00:00Z"
     updatedAt:
       type: string
       format: date-time
+      description: Timestamp when the unit was last updated
+      example: "2023-01-01T00:00:00Z"
+
 UnitCreate:
   type: object
+  description: Schema for creating a new unit
   required:
     - unitNo
     - rent
@@ -167,20 +268,139 @@ InviteToken:
       format: date-time
 User:
   type: object
+  description: Represents a user in the system with their profile information and access roles
+  required:
+    - _id
+    - clerkUserId
+    - email
+    - firstName
+    - lastName
+    - username
+    - imageUrl
+    - emailVerified
+    - role
+    - createdAt
+    - updatedAt
   properties:
     _id:
       type: string
+      format: uuid
+      description: Internal database ID of the user
+      example: "507f1f77bcf86cd799439011"
     clerkUserId:
       type: string
-      description: Clerk user ID
+      description: Clerk user ID (external identity)
+      example: "user_2abcdefghijklmnopqrstuvwxy"
     email:
       type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    firstName:
+      type: string
+      description: User's first name
+      example: "John"
+    lastName:
+      type: string
+      description: User's last name
+      example: "Doe"
+    username:
+      type: string
+      description: User's unique username
+      example: "johndoe123"
+    imageUrl:
+      type: string
+      format: uri
+      description: URL to the user's profile image
+      example: "https://example.com/images/profile.jpg"
+    emailVerified:
+      type: boolean
+      description: Whether the user's email has been verified
+      example: true
+    role:
+      type: string
+      enum: [tenant, caretaker, owner]
+      description: User's role in the system
+      example: "tenant"
+    apartmentId:
+      type: string
+      format: uuid
+      nullable: true
+      description: ID of the apartment associated with the user (if any)
+      example: "507f1f77bcf86cd799439012"
+    unitId:
+      type: string
+      format: uuid
+      nullable: true
+      description: ID of the unit associated with the user (for tenants)
+      example: "507f1f77bcf86cd799439013"
     createdAt:
       type: string
       format: date-time
+      description: Timestamp when the user was created
+      example: "2023-01-01T00:00:00Z"
     updatedAt:
       type: string
       format: date-time
+      description: Timestamp when the user was last updated
+      example: "2023-01-01T00:00:00Z"
+
+UserCreate:
+  type: object
+  description: Schema for creating a new user (handled by Clerk)
+  required:
+    - email
+    - firstName
+    - lastName
+  properties:
+    email:
+      type: string
+      format: email
+      description: User's email address
+      example: "user@example.com"
+    firstName:
+      type: string
+      description: User's first name
+      example: "John"
+    lastName:
+      type: string
+      description: User's last name
+      example: "Doe"
+    username:
+      type: string
+      description: Desired username (optional, will be generated if not provided)
+      example: "johndoe123"
+    password:
+      type: string
+      format: password
+      description: User's password (only for email/password signup)
+      example: "SecurePassword123!"
+    phoneNumber:
+      type: string
+      description: User's phone number (for phone-based authentication)
+      example: "+254712345678"
+
+UserUpdate:
+  type: object
+  description: Schema for updating user profile information
+  properties:
+    firstName:
+      type: string
+      description: User's first name
+      example: "John"
+    lastName:
+      type: string
+      description: User's last name
+      example: "Doe"
+    username:
+      type: string
+      description: New username
+      example: "johndoe123"
+    imageUrl:
+      type: string
+      format: uri
+      description: URL to the user's new profile image
+      example: "https://example.com/images/new-profile.jpg"
 UserRoleUpdate:
   type: object
   required:
@@ -189,30 +409,120 @@ UserRoleUpdate:
     role:
       type: string
       enum: [landlord, tenant]
+
 Issue:
   type: object
+  description: Represents an issue or maintenance request for a unit
+  required:
+    - _id
+    - title
+    - description
+    - status
+    - reporterId
+    - unitId
+    - createdAt
+    - updatedAt
   properties:
     _id:
       type: string
+      format: uuid
+      description: Unique identifier for the issue
+      example: "507f1f77bcf86cd799439011"
     title:
       type: string
+      description: Brief title of the issue
+      example: "Leaking faucet in the kitchen"
     description:
       type: string
+      description: Detailed description of the issue
+      example: "The kitchen faucet has been leaking for two days now, causing water wastage."
     fileUrl:
       type: string
+      format: uri
+      nullable: true
+      description: URL to an image or document related to the issue
+      example: "https://example.com/images/leak.jpg"
     status:
       type: string
+      enum: [open, in_progress, resolved, ignored]
+      default: open
+      description: Current status of the issue
+      example: "open"
     reporterId:
       type: string
-      description: Clerk user ID of the reporter
+      format: uuid
+      description: Clerk user ID of the person who reported the issue
+      example: "user_2abcdefghijklmnopqrstuvwxy"
     unitId:
       type: string
+      format: uuid
+      description: ID of the unit where the issue was reported
+      example: "507f1f77bcf86cd799439012"
     createdAt:
       type: string
       format: date-time
+      description: Timestamp when the issue was created
+      example: "2023-01-01T00:00:00Z"
     updatedAt:
       type: string
       format: date-time
+      description: Timestamp when the issue was last updated
+      example: "2023-01-01T00:00:00Z"
+
+IssueCreate:
+  type: object
+  description: Schema for creating a new issue
+  required:
+    - title
+    - description
+    - unitId
+    - apartmentProfileId
+  properties:
+    title:
+      type: string
+      minLength: 1
+      description: Brief title of the issue
+      example: "Leaking faucet in the kitchen"
+    description:
+      type: string
+      minLength: 1
+      description: Detailed description of the issue
+      example: "The kitchen faucet has been leaking for two days now, causing water wastage."
+    unitId:
+      type: string
+      format: uuid
+      description: ID of the unit where the issue is located
+      example: "507f1f77bcf86cd799439012"
+    apartmentProfileId:
+      type: string
+      format: uuid
+      description: ID of the apartment profile of the reporter
+      example: "507f1f77bcf86cd799439013"
+    imageUrl:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to an image or document related to the issue
+      example: "https://example.com/images/leak.jpg"
+
+IssueStatusUpdate:
+  type: object
+  description: Schema for updating an issue's status
+  required:
+    - status
+    - apartmentProfileId
+  properties:
+    status:
+      type: string
+      enum: [open, in_progress, resolved, ignored]
+      description: New status for the issue
+      example: "in_progress"
+    apartmentProfileId:
+      type: string
+      format: uuid
+      description: ID of the apartment profile of the person updating the status
+      example: "507f1f77bcf86cd799439013"
+
 IssueReport:
   type: object
   required:
@@ -239,29 +549,81 @@ IssueStatusUpdate:
       enum: [open, in_progress, resolved, ignored]
 Payment:
   type: object
+  description: Represents a rent payment made by a tenant
+  required:
+    - _id
+    - amount
+    - date
+    - status
+    - tenantId
+    - unitId
+    - createdAt
+    - updatedAt
   properties:
     _id:
       type: string
+      format: uuid
+      description: Unique identifier for the payment
+      example: "507f1f77bcf86cd799439011"
     amount:
       type: number
+      format: double
+      minimum: 0
+      description: The payment amount in the currency's smallest unit (e.g., cents)
+      example: 120000
     date:
       type: string
       format: date-time
+      description: The date and time when the payment was made
+      example: "2023-06-15T10:30:00Z"
     status:
       type: string
+      enum: [paid, pending]
+      description: Current status of the payment
+      example: "paid"
     tenantId:
       type: string
-      description: Clerk user ID of the tenant
+      format: uuid
+      description: Clerk user ID of the tenant who made the payment
+      example: "user_2abcdefghijklmnopqrstuvwxy"
     unitId:
       type: string
+      format: uuid
+      description: ID of the unit for which the payment was made
+      example: "507f1f77bcf86cd799439012"
     createdAt:
       type: string
       format: date-time
+      description: Timestamp when the payment record was created
+      example: "2023-06-15T10:30:00Z"
     updatedAt:
       type: string
       format: date-time
+      description: Timestamp when the payment record was last updated
+      example: "2023-06-15T10:30:00Z"
+
+PaymentCreate:
+  type: object
+  description: Schema for creating a new payment
+  required:
+    - unitId
+    - amount
+  properties:
+    unitId:
+      type: string
+      format: uuid
+      description: ID of the unit for which the payment is being made
+      example: "507f1f77bcf86cd799439012"
+    amount:
+      type: number
+      format: double
+      minimum: 0
+      description: The payment amount in the currency's smallest unit (e.g., cents)
+      example: 120000
+
 PaymentSimulate:
   type: object
+  description: Schema for simulating a payment (for testing purposes)
   required:
     - unitId
     - amount

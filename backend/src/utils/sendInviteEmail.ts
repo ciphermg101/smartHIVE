@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
-
+import { AppException } from '@common/error-handler/errorHandler';
+import { config } from '@config/configs';
 interface SendInviteEmailOptions {
   to: string;
   apartmentName: string;
@@ -11,12 +12,12 @@ interface SendInviteEmailOptions {
 }
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
+  host: config.smtp.host,
+  port: Number(config.smtp.port) || 587,
   secure: true,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: config.smtp.user,
+    pass: config.smtp.pass,
   },
 });
 
@@ -33,10 +34,14 @@ export async function sendInviteEmail(options: SendInviteEmailOptions) {
     <p>If you did not expect this invitation, you can ignore this email.</p>
   </div>`;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'no-reply@smarthive.app',
-    to,
-    subject,
-    html,
-  });
-} 
+  try {
+    await transporter.sendMail({
+      from: config.smtp.from || 'no-reply@smarthive.app',
+      to,
+      subject,
+      html,
+    });
+  } catch (error: any) {
+    throw new AppException(error, error.message, error.status);
+  }
+}

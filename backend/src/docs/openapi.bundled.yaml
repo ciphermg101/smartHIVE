@@ -9,328 +9,973 @@ paths:
   /apartments:
     get:
       tags: [Apartments]
-      summary: List all apartments
+      summary: List all apartments owned by the current user
+      description: Returns a list of apartments where the current user is the owner. Requires owner role.
       security:
         - bearerAuth: []
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "200":
-          description: List of apartments
+          description: Successfully retrieved list of apartments
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Apartment"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Apartment"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
     post:
       tags: [Apartments]
       summary: Create a new apartment
+      description: Creates a new apartment with the current user as the owner.
       security:
         - bearerAuth: []
       requestBody:
         required: true
+        description: Apartment details
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/ApartmentCreate"
       responses:
         "201":
-          description: Apartment created
+          description: Apartment created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Apartment"
-  /apartments/{id}:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Apartment created"
+                  data:
+                    $ref: "#/components/schemas/Apartment"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /apartments/{apartmentId}:
     get:
       tags: [Apartments]
       summary: Get apartment by ID
+      description: Retrieves details of a specific apartment. Accessible by owner, caretaker, or tenant of the apartment.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: apartmentId
           required: true
           schema:
             type: string
+          description: ID of the apartment to retrieve
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "200":
-          description: Apartment details
+          description: Successfully retrieved apartment details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Apartment"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Apartment"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
     patch:
       tags: [Apartments]
-      summary: Update apartment
+      summary: Update apartment details
+      description: Updates the details of an existing apartment. Only the apartment owner can perform this action.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: apartmentId
           required: true
           schema:
             type: string
+          description: ID of the apartment to update
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       requestBody:
         required: true
+        description: Updated apartment details
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/ApartmentUpdate"
       responses:
         "200":
-          description: Apartment updated
+          description: Apartment updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Apartment"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Apartment updated"
+                  data:
+                    $ref: "#/components/schemas/Apartment"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
     delete:
       tags: [Apartments]
-      summary: Delete apartment
+      summary: Delete an apartment
+      description: Permanently deletes an apartment and all associated data. Only the apartment owner can perform this action.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: apartmentId
           required: true
           schema:
             type: string
+          description: ID of the apartment to delete
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "204":
-          description: Apartment deleted
-  /units:
-    get:
-      tags: [Units]
-      summary: List all units
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: List of units
+          description: Apartment deleted successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Unit"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Apartment deleted"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /apartments/{apartmentId}/apartment-invite:
+    post:
+      tags: [Apartments]
+      summary: Invite user to apartment
+      description: Sends an invitation to a user to join the apartment with a specific role (owner, caretaker, or tenant).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: apartmentId
+          required: true
+          schema:
+            type: string
+          description: ID of the apartment to invite the user to
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      requestBody:
+        required: true
+        description: Invitation details
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user to invite
+                  example: "user@example.com"
+                role:
+                  type: string
+                  enum: [owner, caretaker, tenant]
+                  description: Role to assign to the user
+                  example: "tenant"
+                unitId:
+                  type: string
+                  description: Required if role is 'tenant'. The ID of the unit to assign the tenant to.
+                  example: "507f1f77bcf86cd799439012"
+      responses:
+        "201":
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Invite sent and profile created"
+                  data:
+                    type: object
+                    properties:
+                      inviteId:
+                        type: string
+                        description: ID of the created invitation
+                      profileId:
+                        type: string
+                        description: ID of the created apartment profile
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /apartments/{apartmentId}/tenants:
+    get:
+      tags: [Apartments]
+      summary: List all tenants in an apartment
+      description: Retrieves a list of all tenants in the specified apartment. Accessible by owners and caretakers.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: apartmentId
+          required: true
+          schema:
+            type: string
+          description: ID of the apartment to list tenants for
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      responses:
+        "200":
+          description: Successfully retrieved list of tenants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /apartments/{apartmentId}/tenants/{tenantId}:
+    delete:
+      tags: [Apartments]
+      summary: Remove a tenant from an apartment
+      description: Removes a tenant from the specified apartment. Accessible by owners and caretakers.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: apartmentId
+          required: true
+          schema:
+            type: string
+          description: ID of the apartment
+        - in: path
+          name: tenantId
+          required: true
+          schema:
+            type: string
+          description: ID of the tenant to remove
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      responses:
+        "200":
+          description: Tenant removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tenant removed"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /units:
+    get:
+      tags: [Units]
+      summary: List all units in an apartment
+      description: Retrieves a list of units for a specific apartment. Accessible by owners and caretakers of the apartment.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: apartmentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the apartment to list units for
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      responses:
+        "200":
+          description: Successfully retrieved list of units
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
     post:
       tags: [Units]
       summary: Create a new unit
+      description: Creates a new rental unit in the specified apartment. Only accessible by apartment owners.
       security:
         - bearerAuth: []
       requestBody:
         required: true
+        description: Unit details
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UnitCreate"
       responses:
         "201":
-          description: Unit created
+          description: Unit created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unit"
-  /units/{id}:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Unit created"
+                  data:
+                    $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /units/{unitId}:
     get:
       tags: [Units]
       summary: Get unit by ID
+      description: Retrieves details of a specific unit. Accessible by owners, caretakers, and tenants associated with the unit's apartment.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: unitId
           required: true
           schema:
             type: string
+            format: uuid
+          description: ID of the unit to retrieve
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "200":
-          description: Unit details
+          description: Successfully retrieved unit details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unit"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Unit"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
     patch:
       tags: [Units]
-      summary: Update unit
+      summary: Update unit details
+      description: Updates the details of an existing unit. Only accessible by the apartment owner.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: unitId
           required: true
           schema:
             type: string
+            format: uuid
+          description: ID of the unit to update
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       requestBody:
         required: true
+        description: Updated unit details
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UnitUpdate"
       responses:
         "200":
-          description: Unit updated
+          description: Unit updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Unit"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Unit updated"
+                  data:
+                    $ref: "#/components/schemas/Unit"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
     delete:
       tags: [Units]
-      summary: Delete unit
+      summary: Delete a unit
+      description: Permanently deletes a unit. Only accessible by the apartment owner.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: unitId
           required: true
           schema:
             type: string
+            format: uuid
+          description: ID of the unit to delete
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "204":
-          description: Unit deleted
+          description: Unit deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Unit deleted"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /users:
     get:
       tags: [Users]
-      summary: List all users
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: List of users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-  /users/me:
-    get:
-      tags: [Users]
-      summary: Get current user profile
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Current user profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-  /users/clerk-sync:
-    post:
-      tags: [Users]
-      summary: Clerk sync
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Clerk sync processed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-  /issues:
-    get:
-      tags: [Issues]
-      summary: List all issues for an apartment (RBAC via ApartmentProfile)
+      summary: List all users (Admin only)
+      description: Retrieves a list of all users in the system. This endpoint is restricted to administrators only.
       security:
         - bearerAuth: []
       parameters:
-        - in: query
-          name: apartmentProfileId
+        - in: header
+          name: Authorization
           required: true
           schema:
             type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "200":
-          description: List of issues
+          description: Successfully retrieved list of users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Issue"
-    post:
-      tags: [Issues]
-      summary: Report an issue
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current authenticated user's profile
+      description: Retrieves the profile information of the currently authenticated user.
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/IssueReport"
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       responses:
-        "201":
-          description: Issue reported
+        "200":
+          description: Successfully retrieved user profile
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Issue"
-  /issues/{id}/status:
-    patch:
-      tags: [Issues]
-      summary: Update issue status
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      description: Retrieves a specific user's profile by their ID. Accessible by administrators or the user themselves.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: userId
           required: true
           schema:
             type: string
+            format: uuid
+          description: ID of the user to retrieve
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      responses:
+        "200":
+          description: Successfully retrieved user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /users/me/update:
+    patch:
+      tags: [Users]
+      summary: Update current user's profile
+      description: Updates the profile information of the currently authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
       requestBody:
         required: true
+        description: User profile data to update
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+                  data:
+                    $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /users/clerk-sync:
+    post:
+      tags: [Users]
+      summary: Synchronize user with Clerk (Internal)
+      description: Internal endpoint for synchronizing user data with Clerk authentication service. Should only be called by Clerk webhooks.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Clerk webhook payload
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSync"
+      responses:
+        "200":
+          description: User synchronized successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User synchronized successfully"
+                  data:
+                    $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+  /issues:
+    get:
+      tags: [Issues]
+      summary: List all issues for an apartment
+      description: Retrieves a list of issues for the apartment associated with the user's profile. Accessible by owners, caretakers, and tenants (tenants can only see their own issues).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      responses:
+        "200":
+          description: Successfully retrieved list of issues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Issue"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+    post:
+      tags: [Issues]
+      summary: Report a new issue
+      description: Creates a new maintenance issue or request. Accessible by tenants to report issues in their unit.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Details of the issue being reported
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueCreate"
+      responses:
+        "201":
+          description: Issue reported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Issue reported"
+                  data:
+                    $ref: "#/components/schemas/Issue"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /issues/{issueId}/status:
+    patch:
+      tags: [Issues]
+      summary: Update issue status
+      description: Updates the status of an existing issue. Accessible by owners and caretakers to manage issue workflow.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: issueId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the issue to update
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer your_jwt_token_here"
+      requestBody:
+        required: true
+        description: New status for the issue
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/IssueStatusUpdate"
       responses:
         "200":
-          description: Issue status updated
+          description: Issue status updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Issue"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Issue status updated"
+                  data:
+                    $ref: "#/components/schemas/Issue"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
   /rent:
     get:
       tags: [Rent]
-      summary: List all payments for an apartment (RBAC via ApartmentProfile)
+      summary: List all rent payments
+      description: Retrieves a list of rent payments for the apartment associated with the user's profile. Accessible by owners, caretakers, and tenants (tenants can only see their own payments).
       security:
         - bearerAuth: []
       parameters:
-        - in: query
-          name: apartmentProfileId
+        - in: header
+          name: Authorization
           required: true
           schema:
             type: string
+            example: "Bearer your_jwt_token_here"
       responses:
         "200":
-          description: List of all payments
+          description: Successfully retrieved list of payments
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Payment"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
   /rent/simulate:
     post:
       tags: [Rent]
-      summary: Simulate a payment
+      summary: Simulate a rent payment (for testing)
+      description: Simulates a rent payment for testing purposes. This endpoint is only available in development and testing environments. Accessible by tenants to simulate their own payments.
       security:
         - bearerAuth: []
       requestBody:
         required: true
+        description: Payment simulation details
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/PaymentSimulate"
       responses:
         "201":
-          description: Payment simulated
+          description: Payment simulation successful
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Payment"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment simulated"
+                  data:
+                    $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 components:
   schemas:
     Apartment:
@@ -355,7 +1000,7 @@ components:
         tenants:
           type: array
           items:
-          type: string
+            type: string
         units:
           type: array
           items:
@@ -530,3 +1175,212 @@ components:
           type: string
         amount:
           type: number
+          
+    UserUpdate:
+      type: object
+      description: Schema for updating user profile information
+      properties:
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+        username:
+          type: string
+          description: New username
+          example: "johndoe123"
+        imageUrl:
+          type: string
+          format: uri
+          description: URL to the user's new profile image
+          example: "https://example.com/images/new-profile.jpg"
+          
+    UserSync:
+      type: object
+      description: Schema for Clerk webhook user synchronization
+      required:
+        - id
+        - email_addresses
+        - first_name
+        - last_name
+        - username
+        - profile_image_url
+      properties:
+        id:
+          type: string
+          description: Clerk user ID
+          example: "user_2abcdefghijklmnopqrstuvwxy"
+        email_addresses:
+          type: array
+          items:
+            type: object
+            properties:
+              email_address:
+                type: string
+                format: email
+                example: "user@example.com"
+        first_name:
+          type: string
+          nullable: true
+          description: User's first name
+          example: "John"
+        last_name:
+          type: string
+          nullable: true
+          description: User's last name
+          example: "Doe"
+        username:
+          type: string
+          nullable: true
+          description: User's username
+          example: "johndoe123"
+        profile_image_url:
+          type: string
+          format: uri
+          description: URL to the user's profile image
+          example: "https://example.com/images/profile.jpg"
+        created_at:
+          type: integer
+          description: Unix timestamp when the user was created
+          example: 1617894000
+        updated_at:
+          type: integer
+          description: Unix timestamp when the user was last updated
+          example: 1617894000
+          
+    IssueCreate:
+      type: object
+      description: Schema for creating a new issue
+      required:
+        - title
+        - description
+        - unitId
+        - apartmentProfileId
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Brief title of the issue
+          example: "Leaking faucet in the kitchen"
+        description:
+          type: string
+          minLength: 1
+          description: Detailed description of the issue
+          example: "The kitchen faucet has been leaking for two days now."
+        unitId:
+          type: string
+          format: uuid
+          description: ID of the unit where the issue is located
+          example: "507f1f77bcf86cd799439012"
+        apartmentProfileId:
+          type: string
+          format: uuid
+          description: ID of the apartment profile of the reporter
+          example: "507f1f77bcf86cd799439013"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to an image or document related to the issue
+          example: "https://example.com/images/leak.jpg"
+
+  responses:
+    BadRequestError:
+      description: Bad Request - The request was invalid or cannot be served
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Bad Request"
+              message:
+                type: string
+                example: "Invalid request parameters"
+    UnauthorizedError:
+      description: Unauthorized - Authentication is required and has failed or has not been provided
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Unauthorized"
+              message:
+                type: string
+                example: "Authentication required"
+    ForbiddenError:
+      description: Forbidden - The request was valid, but the server is refusing action
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Forbidden"
+              message:
+                type: string
+                example: "You don't have permission to perform this action"
+    NotFoundError:
+      description: Not Found - The requested resource could not be found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Not Found"
+              message:
+                type: string
+                example: "The requested resource was not found"
+    ConflictError:
+      description: Conflict - The request conflicts with the current state of the server
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Conflict"
+              message:
+                type: string
+                example: "A resource with this ID already exists"
+    InternalServerError:
+      description: Internal Server Error - The server encountered an error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Internal Server Error"
+              message:
+                type: string
+                example: "An unexpected error occurred"

@@ -1,18 +1,15 @@
-import app from '@/app';
 import http from 'http';
+import app from '@/app';
 import { Server as SocketIOServer } from 'socket.io';
-import dotenv from 'dotenv';
 import { registerChatHandlers } from '@modules/chat';
+import { config } from '@config/configs';
 
-dotenv.config();
-
-const PORT = process.env.PORT || 4000;
-
+const PORT = config.port;
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN || '*',
+    origin: config.clientOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   },

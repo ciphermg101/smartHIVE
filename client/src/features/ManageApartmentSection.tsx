@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApartmentStore } from '@store/apartment';
 import { useApartment, useApartmenTenants, useInviteApartmentUser, useRemoveApartmentUser, useUpdateApartment } from '@/hooks/useApartments';
+import { useUnits } from '@/hooks/useUnits';
 import { Dialog, DialogContent, DialogTitle } from '@components/ui/dialog';
 import { toast } from 'sonner';
 import {
@@ -16,6 +17,9 @@ const imageUploadConfig = {
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
+import { type UserProfile } from '@/interfaces/user.interface';
+import { UserDisplay } from '@components/UserDisplay';
+
 const TABS = [
   { label: 'General' },
   { label: 'Tenants' },
@@ -26,23 +30,24 @@ const roles = [
   { value: 'Caretaker', label: 'Caretaker' },
 ];
 
-function getInitials(name?: string) {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-}
-
 const ManageApartmentSection: React.FC = () => {
   const selectedProfile = useApartmentStore((s) => s.selectedProfile);
   const apartmentId = selectedProfile?.profile.apartmentId || '';
   const { data: apartment, isLoading: apartmentLoading, error: apartmentError } = useApartment(apartmentId);
   const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmenTenants(apartmentId);
+  const { data: units = [] } = useUnits(apartmentId);
+  
+  const unitMap = React.useMemo(() => {
+    return units.reduce<Record<string, string>>((acc, unit) => {
+      acc[unit._id] = unit.unitNo;
+      return acc;
+    }, {});
+  }, [units]);
+
   const inviteUser = useInviteApartmentUser(apartmentId);
   const removeUser = useRemoveApartmentUser(apartmentId);
   const updateApartment = useUpdateApartment(apartmentId);
+  const availableUnits = units.filter(unit => unit.status.toLowerCase() === 'vacant');
 
   const [tab, setTab] = useState('General');
   const [editOpen, setEditOpen] = useState(false);
@@ -52,7 +57,7 @@ const ManageApartmentSection: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
   const [saving, setSaving] = useState(false);
-  const [inviteList, setInviteList] = useState([{ email: '', role: 'Tenant' }]);
+  const [inviteList, setInviteList] = useState([{ email: '', role: 'Tenant', unitId: '' }]);
   const [inviting, setInviting] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -160,7 +165,7 @@ const ManageApartmentSection: React.FC = () => {
   }
 
   function addInviteField() {
-    setInviteList(list => [...list, { email: '', role: 'Member' }]);
+    setInviteList(list => [...list, { email: '', role: 'Tenant', unitId: '' }]);
   }
 
   function removeInviteField(idx: number) {
@@ -172,11 +177,23 @@ const ManageApartmentSection: React.FC = () => {
     setInviting(true);
     setError(null);
 
+    // Validate that all required fields are filled
+    const invalidInvites = inviteList.filter(invite => !invite.email || !invite.role || (invite.role === 'Tenant' && !invite.unitId));
+    if (invalidInvites.length > 0) {
+      setError('Please fill in all required fields for each invite');
+      setInviting(false);
+      return;
+    }
+
     type InviteResult = { success: boolean; email: string; error?: string };
 
     Promise.all(
       inviteList.map(invite =>
-        inviteUser.mutateAsync({ email: invite.email, role: invite.role, unitId: apartmentId })
+        inviteUser.mutateAsync({
+          email: invite.email,
+          role: invite.role.toLowerCase(),
+          unitId: invite.unitId
+        })
           .then(() => ({ success: true, email: invite.email }))
           .catch((err): InviteResult => ({
             success: false,
@@ -193,7 +210,7 @@ const ManageApartmentSection: React.FC = () => {
             .join('\n');
           setError(`Some invites failed:\n${errorMessages}`);
         } else {
-          setInviteList([{ email: '', role: 'Tenant' }]);
+          setInviteList([{ email: '', role: 'Tenant', unitId: '' }]);
           toast.success('Invites sent successfully');
         }
       })
@@ -466,7 +483,7 @@ const ManageApartmentSection: React.FC = () => {
                           required
                         />
                       </div>
-                      <div className="col-span-8 sm:col-span-4">
+                      <div className="col-span-8 sm:col-span-2">
                         <label htmlFor={`role-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Role
                         </label>
@@ -483,6 +500,27 @@ const ManageApartmentSection: React.FC = () => {
                           ))}
                         </select>
                       </div>
+                      {invite.role === 'Tenant' && (
+                        <div className="col-span-8 sm:col-span-2">
+                          <label htmlFor={`unit-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Unit <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            id={`unit-${idx}`}
+                            value={invite.unitId || ''}
+                            onChange={e => handleInviteChange(idx, 'unitId', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-800 dark:text-white transition-colors"
+                            required={invite.role === 'Tenant'}
+                          >
+                            <option value="">Select a unit</option>
+                            {availableUnits.map(unit => (
+                              <option key={unit._id} value={unit._id}>
+                                {unit.unitNo} - Ksh.{unit.rent}/month
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div className="col-span-4 sm:col-span-1 flex items-end h-10">
                         {inviteList.length > 1 && (
                           <button
@@ -589,40 +627,14 @@ const ManageApartmentSection: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-zinc-700">
-                {users.map((user: any) => (
-                  <div key={user._id || user.email} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                {users.map((user: UserProfile) => (
+                  <div key={user.id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {user.avatarUrl ? (
-                          <img
-                            src={user.avatarUrl}
-                            alt={user.name || user.email}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-zinc-800 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                            {getInitials(user.name || user.email)}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {user.name || user.email}
-                            {user.role === 'admin' && (
-                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                                {user.role}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
-                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Joined {user.dateJoined ? new Date(user.dateJoined).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            }) : 'N/A'}
-                          </div>
-                        </div>
-                      </div>
+                      <UserDisplay 
+                        userId={user._id} 
+                        role={user.role} 
+                        unitName={user.unitId ? unitMap[user.unitId] : undefined}
+                      />
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => { /* Handle edit */ }}
@@ -634,7 +646,7 @@ const ManageApartmentSection: React.FC = () => {
                           </svg>
                         </button>
                         <button
-                          onClick={() => confirmRemoveUser(user.userId)}
+                          onClick={() => confirmRemoveUser(user?.id || '')}
                           className="p-1.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                           aria-label="Remove member"
                         >

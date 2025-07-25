@@ -7,6 +7,7 @@ import { zodValidate } from '@utils/zodValidate';
 import { ApartmentService } from '@modules/apartments/apartment.service';
 import { ApartmentInviteService } from '@modules/apartments/apartmentInvite.service';
 import { ApartmentProfile } from '@modules/apartments/apartmentProfile.model';
+import { config } from '@config/configs';
 
 const router = Router();
 
@@ -135,7 +136,7 @@ router.post(
       const result = await ApartmentInviteService.inviteUser({
         ...req.body,
         invitedBy: auth.userId,
-        clientOrigin: process.env.CLIENT_ORIGIN,
+        clientOrigin: config.clientOrigin,
       });
       res.status(201).json({ success: true, message: 'Invite sent and profile created', data: result });
     } catch (err) {

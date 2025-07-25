@@ -46,4 +46,20 @@ router.post(
   }
 );
 
+router.get(
+  '/:id',
+  authGuard,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await UserService.getUserById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      res.json({ success: true, data: user });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 export default router; 

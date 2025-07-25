@@ -19,6 +19,7 @@ export interface ApartmentProfile {
   apartmentId: string
   role: string
   unitId?: string
+  dateJoined: string
   status: string
 }
 

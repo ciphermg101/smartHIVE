@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { json, urlencoded } from 'express';
 import { clerkMiddleware } from '@clerk/express'
 import { errorHandler } from '@common/error-handler/errorHandler';
@@ -15,16 +14,17 @@ import { unitRouter } from '@modules/units';
 import { paymentRouter } from '@modules/rent';
 import { issueRouter } from '@modules/issues';
 import { userRouter } from '@modules/users';
+import webhookRouter from '@common/webhooks/webhook.controller';
 import { requireApiVersion } from '@common/middleware/requireApiVersion';
+import { config } from '@config/configs';
 
-dotenv.config();
 const app = express();
 
 // Security middleware
 app.use(helmet());
 
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN,
+  origin: config.clientOrigin,
   credentials: true,
 }));
 
@@ -43,13 +43,18 @@ app.use(json());
 app.use(urlencoded({ extended: true }));
 
 // Clerk authentication middleware
-app.use(clerkMiddleware())
+app.use(clerkMiddleware());
 
 // Response interceptor
 app.use(responseInterceptor);
 
-// API routes
+// API versioning middleware
 app.use(requireApiVersion);
+
+// Webhook routes
+app.use('/api/v1/webhooks', webhookRouter);
+
+// API routes
 app.use('/api/v1/apartments', apartmentRouter);
 app.use('/api/v1/units', unitRouter);
 app.use('/api/v1/payments', paymentRouter);
