@@ -5,7 +5,10 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   port: process.env.PORT ? Number(process.env.PORT) : 4000,
   mongoUri: process.env.MONGODB_URI,
-  sentryDsn: process.env.SENTRY_DSN,
+  sentryDsn: { 
+    dsn: process.env.SENTRY_DSN,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+  },
   clientOrigin: process.env.CLIENT_ORIGIN,
   clerk: {
     secretKey: process.env.CLERK_SECRET_KEY,
@@ -19,5 +22,4 @@ export const config = {
     pass: process.env.SMTP_PASS,
     from: process.env.SMTP_FROM,
   },
-
 }; 
