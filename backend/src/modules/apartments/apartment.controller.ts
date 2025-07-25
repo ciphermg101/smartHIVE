@@ -136,7 +136,7 @@ router.post(
       const result = await ApartmentInviteService.inviteUser({
         ...req.body,
         invitedBy: auth.userId,
-        clientOrigin: config.clientOrigin,
+        clientOrigin: config.clientOrigins[0],
       });
       res.status(201).json({ success: true, message: 'Invite sent and profile created', data: result });
     } catch (err) {
