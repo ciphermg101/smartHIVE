@@ -63,9 +63,7 @@ function AppWrapper() {
   return (
     <ClerkProvider
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-      domain="smart-hive-three.vercel.app"
-      isSatellite={false}
-      afterSignInUrl="/onboarding"
+      signInFallbackRedirectUrl="/onboarding"
       routerPush={(to) => navigate(to)}
       routerReplace={(to) => navigate(to, { replace: true })}
     >
