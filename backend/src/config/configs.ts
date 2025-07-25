@@ -9,7 +9,7 @@ export const config = {
     dsn: process.env.SENTRY_DSN,
     authToken: process.env.SENTRY_AUTH_TOKEN,
   },
-  clientOrigin: process.env.CLIENT_ORIGIN,
+  clientOrigins: process.env.CLIENT_ORIGINS?.split(',') || [],
   clerk: {
     secretKey: process.env.CLERK_SECRET_KEY,
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
