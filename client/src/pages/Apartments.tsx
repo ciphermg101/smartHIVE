@@ -1,4 +1,4 @@
-import { useApartments } from '@hooks/useApartments'
+import { useMyApartments } from '@hooks/useApartments'
 import { Card, CardHeader, CardContent } from '@components/ui/card'
 import { Button } from '@components/ui/button'
 import { Skeleton } from '@components/ui/skeleton'
@@ -13,7 +13,7 @@ interface Apartment {
 }
 
 export default function ApartmentsPage() {
-  const { data, isLoading } = useApartments()
+  const { data, isLoading } = useMyApartments()
   const profiles = useUserStore((s: any) => s.profiles)
   const setSelectedApartment = useApartmentStore(s => s.setSelectedApartment)
   const setSelectedProfile = useApartmentStore(s => s.setSelectedProfile)
@@ -69,7 +69,7 @@ export default function ApartmentsPage() {
       </div>
       {selectedProfile && (
         <div className="mt-8 p-4 border border-border rounded bg-muted">
-          <div className="font-semibold">Current Role: {selectedProfile.role}</div>
+          <div className="font-semibold">Current Role: {selectedProfile.profile.role}</div>
           <div className="text-xs text-muted-foreground">ApartmentProfile ID: {selectedProfile._id}</div>
         </div>
       )}
