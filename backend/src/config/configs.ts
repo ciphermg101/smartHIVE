@@ -10,6 +10,7 @@ export const config = {
     authToken: process.env.SENTRY_AUTH_TOKEN,
   },
   clientOrigin: process.env.CLIENT_ORIGIN,
+  allowedOrigins: process.env.ALLOWED_ORIGINS,
   clerk: {
     secretKey: process.env.CLERK_SECRET_KEY,
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
