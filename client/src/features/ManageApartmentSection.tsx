@@ -9,12 +9,19 @@ import {
   validateImageFile,
   createPreviewUrl,
   cleanupPreviewUrl,
+  deleteImageFromCloudinary,
   type ImageUploadProgress
 } from '@utils/imageUpload';
 
 const imageUploadConfig = {
   uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
+
+const cloudinaryDeleteConfig = {
+  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
+  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
 };
 
 import { type IUserProfile } from '@/interfaces/user.interface';
@@ -94,8 +101,11 @@ const ManageApartmentSection: React.FC = () => {
     setUploading(false);
     setError(null);
 
+    let uploadedImageUrl = "";
+    const originalImageUrl = editForm?.imageUrl || '';
+
     try {
-      let imageUrl = editForm?.imageUrl || '';
+      let imageUrl = originalImageUrl;
       if (selectedFile) {
         try {
           setUploading(true);
@@ -111,6 +121,7 @@ const ManageApartmentSection: React.FC = () => {
             },
             (progress: ImageUploadProgress) => setUploadProgress(progress)
           );
+          uploadedImageUrl = imageUrl;
           setUploading(false);
         } catch (error) {
           const errorMessage = `Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -129,18 +140,48 @@ const ManageApartmentSection: React.FC = () => {
           imageUrl
         },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
+
+            if (uploadedImageUrl && originalImageUrl && originalImageUrl !== uploadedImageUrl) {
+              try {
+                await deleteImageFromCloudinary(originalImageUrl, cloudinaryDeleteConfig);
+                console.log('Deleted old apartment image');
+              } catch (deleteError) {
+                console.error('Failed to delete old apartment image:', deleteError);
+              }
+            }
+
             setEditOpen(false);
             resetFormStates();
             toast.success('Apartment updated');
           },
-          onError: (err: any) => {
+          onError: async (err: any) => {
+
+            if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
+              try {
+                await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+                console.log('Cleaned up uploaded image after apartment update failure');
+              } catch (deleteError) {
+                console.error('Failed to clean up uploaded image:', deleteError);
+              }
+            }
+
             setError(err?.response?.data?.message || 'Failed to update apartment');
             resetFormStates();
           },
         }
       );
     } catch (error) {
+
+      if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
+        try {
+          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          console.log('Cleaned up uploaded image after unexpected error');
+        } catch (deleteError) {
+          console.error('Failed to clean up uploaded image:', deleteError);
+        }
+      }
+
       setError('An unexpected error occurred. Please try again.');
       resetFormStates();
     }
@@ -622,8 +663,8 @@ const ManageApartmentSection: React.FC = () => {
                 {users.map((user: IUserProfile) => (
                   <div key={user._id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                     <div className="flex items-center justify-between">
-                      <UserDisplay 
-                        user={user} 
+                      <UserDisplay
+                        user={user}
                         unitNumber={user.unitId?.unitNo}
                       />
                       <div className="flex items-center space-x-2">

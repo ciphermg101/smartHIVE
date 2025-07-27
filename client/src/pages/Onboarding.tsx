@@ -21,12 +21,19 @@ import {
   validateImageFile,
   createPreviewUrl,
   cleanupPreviewUrl,
-  type ImageUploadProgress
+  deleteImageFromCloudinary,
+  type ImageUploadProgress,
 } from "@utils/imageUpload";
 
 const imageUploadConfig = {
   uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
+
+const cloudinaryDeleteConfig = {
+  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
+  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
 };
 
 export default function OnboardingPage() {
@@ -88,6 +95,7 @@ export default function OnboardingPage() {
 
     setUploading(true);
     setUploadProgress({ progress: 0, stage: 'compressing' });
+    let uploadedImageUrl = "";
 
     try {
       let imageUrl = "";
@@ -105,6 +113,7 @@ export default function OnboardingPage() {
             },
             (progress: ImageUploadProgress) => setUploadProgress(progress)
           );
+          uploadedImageUrl = imageUrl;
         } catch (error) {
           setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
           setUploading(false);
@@ -133,7 +142,17 @@ export default function OnboardingPage() {
               setUploadProgress(null);
             }, 2000);
           },
-          onError: (err: any) => {
+          onError: async (err: any) => {
+
+            if (uploadedImageUrl) {
+              try {
+                await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+                console.log('Cleaned up uploaded image after apartment creation failure');
+              } catch (deleteError) {
+                console.error('Failed to clean up uploaded image:', deleteError);
+              }
+            }
+            
             setFormError(
               err?.response?.data?.message || "Failed to create apartment."
             );
@@ -143,6 +162,16 @@ export default function OnboardingPage() {
         }
       );
     } catch (error) {
+      if (uploadedImageUrl) {
+
+        try {
+          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          console.log('Cleaned up uploaded image after unexpected error');
+        } catch (deleteError) {
+          console.error('Failed to clean up uploaded image:', deleteError);
+        }
+      }
+
       setFormError("An unexpected error occurred. Please try again.");
       setUploading(false);
       setUploadProgress(null);

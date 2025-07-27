@@ -13,6 +13,12 @@ export interface ImageUploadProgress {
     stage: 'compressing' | 'uploading' | 'complete';
 }
 
+export interface CloudinaryDeleteConfig {
+    cloudName: string;
+    apiKey: string;
+    apiSecret: string;
+}
+
 export function compressImage(
     file: File,
     options: ImageUploadOptions = {}
@@ -155,9 +161,9 @@ export async function uploadImageToCloudinary(
     });
 
     if (folderPath) {
-        formData.append("folder", folderPath); 
+        formData.append("folder", folderPath);
         formData.append("asset_folder", folderPath);
-        
+
         const timestamp = Date.now();
         const randomSuffix = Math.random().toString(36).substring(2, 8);
         const publicId = `${folderPath}/${timestamp}_${randomSuffix}`;
@@ -248,4 +254,103 @@ export function createPreviewUrl(file: File): string {
 
 export function cleanupPreviewUrl(url: string): void {
     URL.revokeObjectURL(url);
+}
+
+export function extractPublicIdFromUrl(imageUrl: string): string | null {
+    try {
+        const urlParts = imageUrl.split('/');
+        const uploadIndex = urlParts.findIndex(part => part === 'upload');
+        if (uploadIndex === -1) return null;
+
+        let pathStart = uploadIndex + 1;
+        if (urlParts[pathStart]?.startsWith('v')) {
+            pathStart += 1;
+        }
+
+        const pathParts = urlParts.slice(pathStart);
+        const fullPath = pathParts.join('/');
+
+        return fullPath.replace(/\.[^/.]+$/, '');
+    } catch (error) {
+        console.error('Failed to extract public ID from URL:', error);
+        return null;
+    }
+}
+
+export async function deleteImageFromCloudinary(
+    imageUrl: string,
+    cloudinaryConfig: CloudinaryDeleteConfig
+): Promise<boolean> {
+    const publicId = extractPublicIdFromUrl(imageUrl);
+    if (!publicId) {
+        console.error('Could not extract public ID from URL:', imageUrl);
+        return false;
+    }
+
+    try {
+        const timestamp = Math.round(Date.now() / 1000);
+        const signature = await generateCloudinarySignature(
+            { public_id: publicId, timestamp },
+            cloudinaryConfig.apiSecret
+        );
+
+        const formData = new FormData();
+        formData.append('public_id', publicId);
+        formData.append('timestamp', timestamp.toString());
+        formData.append('api_key', cloudinaryConfig.apiKey);
+        formData.append('signature', signature);
+
+        const deleteUrl = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/destroy`;
+
+        const response = await fetch(deleteUrl, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+        return result.result === 'ok';
+    } catch (error) {
+        console.error('Failed to delete image from Cloudinary:', error);
+        return false;
+    }
+}
+
+async function generateCloudinarySignature(
+    params: Record<string, any>,
+    apiSecret: string
+): Promise<string> {
+    const sortedParams = Object.keys(params)
+        .sort()
+        .map(key => `${key}=${params[key]}`)
+        .join('&');
+
+    const stringToSign = `${sortedParams}${apiSecret}`;
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(stringToSign);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function deleteMultipleImagesFromCloudinary(
+    imageUrls: string[],
+    cloudinaryConfig: CloudinaryDeleteConfig
+): Promise<{ success: string[]; failed: string[] }> {
+    const results = await Promise.allSettled(
+        imageUrls.map(url => deleteImageFromCloudinary(url, cloudinaryConfig))
+    );
+
+    const success: string[] = [];
+    const failed: string[] = [];
+
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+            success.push(imageUrls[index]);
+        } else {
+            failed.push(imageUrls[index]);
+        }
+    });
+
+    return { success, failed };
 }

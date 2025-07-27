@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@lib/axios'
 import type { ApartmentForm, ApartmentWithProfile } from '@/interfaces/apartments'
+import { 
+  deleteMultipleImagesFromCloudinary 
+} from '@utils/imageUpload';
+
+const cloudinaryDeleteConfig = {
+  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
+  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
+};
 
 export function useCreateApartment() {
   const queryClient = useQueryClient()
@@ -36,11 +45,55 @@ export function useUpdateApartment(apartmentId: string) {
 }
 
 export function useDeleteApartment(apartmentId: string) {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: () => api.delete(`/apartments/${apartmentId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apartments'] })
-  })
+    onSuccess: async () => {
+      try {
+        // Get apartment and units data from cache before invalidating
+        const apartmentData = queryClient.getQueryData<{ imageUrl?: string }>(['apartment', apartmentId]);
+        const unitsData = queryClient.getQueryData<Array<{ imageUrl?: string }>>(['units', apartmentId]);
+        
+        // Collect image URLs
+        const imageUrls: string[] = [];
+        
+        if (apartmentData?.imageUrl) {
+          imageUrls.push(apartmentData.imageUrl);
+        }
+        
+        if (unitsData && Array.isArray(unitsData)) {
+          unitsData.forEach((unit) => {
+            if (unit?.imageUrl) {
+              imageUrls.push(unit.imageUrl);
+            }
+          });
+        }
+        
+        // Delete images from Cloudinary
+        if (imageUrls.length > 0) {
+          const deleteResults = await deleteMultipleImagesFromCloudinary(
+            imageUrls,
+            cloudinaryDeleteConfig
+          );
+          
+          console.log(`Cleaned up ${deleteResults.success.length} apartment images`);
+          
+          if (deleteResults.failed.length > 0) {
+            console.warn('Some images failed to delete:', deleteResults.failed);
+          }
+        }
+        
+      } catch (imageDeleteError) {
+        console.error('Failed to clean up apartment images:', imageDeleteError);
+      }
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['apartments'] });
+      queryClient.invalidateQueries({ queryKey: ['apartment', apartmentId] });
+      queryClient.invalidateQueries({ queryKey: ['units', apartmentId] });
+    }
+  });
 }
 
 export function useMyApartments() {

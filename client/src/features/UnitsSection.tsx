@@ -20,17 +20,24 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@components/ui/form';
 import { useCreateUnit, useUnits, useUpdateUnit, useDeleteUnit } from '@hooks/useUnits';
-import { 
-  uploadUnitImage, 
-  validateImageFile, 
+import {
+  uploadUnitImage,
+  validateImageFile,
   createPreviewUrl,
   cleanupPreviewUrl,
-  type ImageUploadProgress 
+  deleteImageFromCloudinary,
+  type ImageUploadProgress
 } from '@utils/imageUpload';
 
 const imageUploadConfig = {
   uploadUrl: import.meta.env.VITE_CLOUDINARY_UPLOAD_URL,
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+};
+
+const cloudinaryDeleteConfig = {
+  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
+  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
 };
 
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
@@ -57,7 +64,7 @@ const UnitsSection: React.FC = () => {
   const selectedProfile = useApartmentStore((s) => s.selectedProfile);
   const apartmentId = selectedProfile?.profile.apartmentId || '';
   const apartmentName = selectedProfile?.name || '';
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
@@ -67,7 +74,7 @@ const UnitsSection: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<ImageUploadProgress | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [flippedUnits, setFlippedUnits] = useState<Record<string, boolean>>({});
-  const [editingUnit, setEditingUnit] = useState<{id: string, unitNo: string, rent: number} | null>(null);
+  const [editingUnit, setEditingUnit] = useState<{ id: string, unitNo: string, rent: number } | null>(null);
 
   const { data: units = [], isLoading } = useUnits(apartmentId);
   const createUnitMutation = useCreateUnit(apartmentId);
@@ -111,9 +118,21 @@ const UnitsSection: React.FC = () => {
 
   const handleConfirmDelete = () => {
     if (!unitToDelete) return;
-    
+
+    const unitToDeleteData = units.find(u => u._id === unitToDelete);
+
     deleteUnit(unitToDelete, {
-      onSuccess: () => {
+      onSuccess: async () => {
+
+        if (unitToDeleteData?.imageUrl) {
+          try {
+            await deleteImageFromCloudinary(unitToDeleteData.imageUrl, cloudinaryDeleteConfig);
+            console.log('Deleted unit image from Cloudinary');
+          } catch (deleteError) {
+            console.error('Failed to delete unit image from Cloudinary:', deleteError);
+          }
+        }
+
         toast.success('Unit deleted successfully');
         setIsDeleteDialogOpen(false);
         setUnitToDelete(null);
@@ -124,14 +143,20 @@ const UnitsSection: React.FC = () => {
     });
   };
 
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [originalImageUrl, setOriginalImageUrl] = useState("");
+
   const onSubmit = async (data: UnitFormValues) => {
     try {
       setFormError(null);
       setUploading(true);
       setUploadProgress({ progress: 0, stage: 'compressing' });
 
-      let imageUrl = editingUnit?.id ? units.find(u => u._id === editingUnit.id)?.imageUrl : '';
-
+      setUploadedImageUrl("");
+      const originalUrl = editingUnit?.id ? units.find(u => u._id === editingUnit.id)?.imageUrl || '' : '';
+      setOriginalImageUrl(originalUrl);
+      let imageUrl = originalUrl;
+      
       if (selectedFile) {
         try {
           imageUrl = await uploadUnitImage(
@@ -147,6 +172,7 @@ const UnitsSection: React.FC = () => {
             },
             (progress: ImageUploadProgress) => setUploadProgress(progress)
           );
+          setUploadedImageUrl(imageUrl);
         } catch (error) {
           setFormError(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
           setUploading(false);
@@ -166,6 +192,16 @@ const UnitsSection: React.FC = () => {
           id: editingUnit.id,
           ...payload
         });
+
+        if (uploadedImageUrl && originalImageUrl && originalImageUrl !== uploadedImageUrl) {
+          try {
+            await deleteImageFromCloudinary(originalImageUrl, cloudinaryDeleteConfig);
+            console.log('Deleted old unit image');
+          } catch (deleteError) {
+            console.error('Failed to delete old unit image:', deleteError);
+          }
+        }
+
         toast.success('Unit updated successfully');
       } else {
         await createUnitMutation.mutateAsync({
@@ -178,6 +214,16 @@ const UnitsSection: React.FC = () => {
       resetForm();
       setIsModalOpen(false);
     } catch (error) {
+
+      if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
+        try {
+          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          console.log('Cleaned up uploaded image after unit operation failure');
+        } catch (deleteError) {
+          console.error('Failed to clean up uploaded image:', deleteError);
+        }
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       setFormError(errorMessage);
       toast.error(errorMessage);
@@ -259,8 +305,8 @@ const UnitsSection: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {units.map((unit) => (
-            <div 
-              key={unit._id} 
+            <div
+              key={unit._id}
               className={`relative h-64 transition-all duration-500 [transform-style:preserve-3d] cursor-pointer ${flippedUnits[unit._id] ? '[transform:rotateY(180deg)]' : ''}`}
               onClick={() => handleFlip(unit._id)}
             >
@@ -315,8 +361,8 @@ const UnitsSection: React.FC = () => {
                     )}
                   </div>
                   <div className="mt-4 flex flex-col space-y-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={(e) => handleEditClick(e, unit)}
                       className="w-full"
@@ -324,8 +370,8 @@ const UnitsSection: React.FC = () => {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Unit
                     </Button>
-                    <Button 
-                      variant="destructive" 
+                    <Button
+                      variant="destructive"
                       size="sm"
                       onClick={(e) => handleDeleteClick(e, unit._id)}
                       className="w-full"
@@ -361,8 +407,8 @@ const UnitsSection: React.FC = () => {
                 Cancel
               </Button>
             </DialogClose>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
             >
