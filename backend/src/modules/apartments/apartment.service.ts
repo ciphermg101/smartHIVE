@@ -133,6 +133,23 @@ export class ApartmentService {
     }
   }
 
+  static async getUserApartmentProfile(userId: string, apartmentId: string) {
+    try {
+      const profile = await ApartmentProfile.findOne({ userId, apartmentId }).lean();
+      
+      if (!profile) {
+        throw new AppException('Profile not found', 404);
+      }
+
+      return profile;
+    } catch (error: any) {
+      if (error instanceof AppException) {
+        throw error;
+      }
+      throw new AppException(error, error.message, error.status);
+    }
+  }
+
   static async getApartmentTenants(apartmentId: string) {
     try {
       return await ApartmentProfile.find({ apartmentId })
