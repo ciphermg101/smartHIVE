@@ -3,7 +3,7 @@ import { Apartment } from "@modules/apartments/apartment.model";
 import { AppException } from '@common/error-handler/errorHandler';
 
 export class UnitService {
-  static async create(data: {
+  static async createUnit(data: {
     apartmentId: string;
     unitNo: string;
     rent: number;
@@ -38,7 +38,7 @@ export class UnitService {
     }
   }
 
-  static async listByApartment(apartmentId: string): Promise<IUnit[]> {
+  static async listUnitsByApartment(apartmentId: string): Promise<IUnit[]> {
     try {
       const units = await Unit.find({ apartmentId }).lean();
       return units;
@@ -50,7 +50,7 @@ export class UnitService {
     }
   }
 
-  static async getById(id: string): Promise<IUnit | null> {
+  static async getUnitById(id: string): Promise<IUnit | null> {
     try {
       const unit = await Unit.findById(id).lean();
 
@@ -67,7 +67,7 @@ export class UnitService {
     }
   }
 
-  static async update(
+  static async updateUnit(
     id: string,
     data: Partial<Pick<IUnit, "unitNo" | "rent" | "tenantId" | "imageUrl">>
   ): Promise<IUnit | null> {
@@ -87,7 +87,7 @@ export class UnitService {
     }
   }
 
-  static async delete(id: string): Promise<boolean> {
+  static async deleteUnit(id: string): Promise<boolean> {
     try {
       const unit = await Unit.findByIdAndDelete(id);
 

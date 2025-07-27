@@ -5,12 +5,8 @@ export interface IUser extends Document {
   email: string;
   firstName: string;
   lastName: string;
-  username: string;
   imageUrl: string;
   emailVerified: boolean;
-  role: string;
-  apartmentId?: string;
-  unitId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,12 +16,8 @@ const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   firstName: { type: String, default: '' },
   lastName: { type: String, default: '' },
-  username: { type: String, default: '' },
   imageUrl: { type: String, default: '' },
   emailVerified: { type: Boolean, default: false },
-  role: { type: String, default: 'tenant', enum: ['tenant', 'caretaker', 'owner'] },
-  apartmentId: { type: Schema.Types.ObjectId, ref: 'Apartment' },
-  unitId: { type: Schema.Types.ObjectId, ref: 'Unit' },
 }, { 
   timestamps: true,
   toJSON: {

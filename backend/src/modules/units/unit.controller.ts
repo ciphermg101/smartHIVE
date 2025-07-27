@@ -29,7 +29,7 @@ router.post(
   zodValidate({ body: createUnitSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unit = await UnitService.create({
+      const unit = await UnitService.createUnit({
         apartmentId: req.body.apartmentId,
         unitNo: req.body.unitNo,
         rent: req.body.rent,
@@ -49,7 +49,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { apartmentId } = req.query;
-      const units = await UnitService.listByApartment(apartmentId as string);
+      const units = await UnitService.listUnitsByApartment(apartmentId as string);
       res.json({ success: true, data: units });
     } catch (err) {
       next(err);
@@ -63,7 +63,7 @@ router.get(
   rolesGuard({ roles: ['owner', 'caretaker', 'tenant'], resourceType: 'unit' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unit = await UnitService.getById(req.params.id || '');
+      const unit = await UnitService.getUnitById(req.params.id || '');
       if (!unit) return res.status(404).json({ success: false, message: 'Unit not found' });
       res.json({ success: true, data: unit });
     } catch (err) {
@@ -79,7 +79,7 @@ router.patch(
   zodValidate({ body: updateUnitSchema }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const unit = await UnitService.update(req.params.id || '', req.body);
+      const unit = await UnitService.updateUnit(req.params.id || '', req.body);
       if (!unit) return res.status(404).json({ success: false, message: 'Unit not found' });
       res.json({ success: true, message: 'Unit updated', data: unit });
     } catch (err) {
@@ -94,7 +94,7 @@ router.delete(
   rolesGuard({ roles: 'owner', resourceType: 'unit' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await UnitService.delete(req.params.id || '');
+      await UnitService.deleteUnit(req.params.id || '');
       res.status(204).json({ success: true, message: 'Unit deleted' });
     } catch (err) {
       next(err);

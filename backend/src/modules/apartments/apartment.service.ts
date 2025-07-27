@@ -3,7 +3,7 @@ import { ApartmentProfile } from '@modules/apartments/apartmentProfile.model';
 import { AppException } from '@common/error-handler/errorHandler';
 
 export class ApartmentService {
-  static async create(data: { 
+  static async createApartment(data: { 
     name: string; 
     description?: string; 
     location: string; 
@@ -51,7 +51,7 @@ export class ApartmentService {
     }
   }
 
-  static async getById(id: string): Promise<IApartment | null> {
+  static async getApartmentById(id: string): Promise<IApartment | null> {
     try {
       const apartment = await Apartment.findById(id).lean();
       
@@ -68,7 +68,7 @@ export class ApartmentService {
     }
   }
 
-  static async update(
+  static async updateApartment(
     id: string, 
     data: Partial<Pick<IApartment, 'name' | 'description' | 'location' | 'imageUrl'>>
   ): Promise<IApartment | null> {
@@ -88,7 +88,7 @@ export class ApartmentService {
     }
   }
 
-  static async delete(id: string): Promise<boolean> {
+  static async deleteApartment(id: string): Promise<boolean> {
     try {
       const result = await Apartment.findByIdAndDelete(id);
       
@@ -133,20 +133,21 @@ export class ApartmentService {
     }
   }
 
-  static async getUserApartmentProfile(userId: string, apartmentId: string) {
+  static async getApartmentTenants(apartmentId: string) {
     try {
-      const profile = await ApartmentProfile.findOne({ userId, apartmentId }).lean();
-      
-      if (!profile) {
-        throw new AppException('Profile not found', 404);
-      }
-
-      return profile;
+      return await ApartmentProfile.find({ apartmentId })
+        .populate('userId')
+        .lean();
     } catch (error: any) {
-      if (error instanceof AppException) {
-        throw error;
-      }
       throw new AppException(error, error.message, error.status);
     }
   }
+
+  static async removeApartmentTenant(apartmentId: string, tenantId: string) {
+    try {
+      await ApartmentProfile.deleteOne({ apartmentId, userId: tenantId });
+    } catch (error: any) {
+      throw new AppException(error, error.message, error.status);
+    }
+  }  
 }

@@ -3,7 +3,7 @@ export type ApartmentProfileRole = 'owner' | 'caretaker' | 'tenant';
 export type ApartmentProfileStatus = 'active' | 'invited' | 'inactive';
 
 export interface IApartmentProfile extends Document {
-  userId: string;
+  userId: Types.ObjectId;
   apartmentId: Types.ObjectId;
   role: ApartmentProfileRole;
   unitId?: Types.ObjectId;
@@ -13,7 +13,7 @@ export interface IApartmentProfile extends Document {
 }
 
 const apartmentProfileSchema = new Schema<IApartmentProfile>({
-  userId: { type: String, required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   apartmentId: { type: Schema.Types.ObjectId, ref: 'Apartment', required: true },
   role: { type: String, enum: ['owner', 'caretaker', 'tenant'], required: true },
   unitId: { type: Schema.Types.ObjectId, ref: 'Unit' },
