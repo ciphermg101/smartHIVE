@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { json, urlencoded } from 'express';
-import { clerkMiddleware, requireAuth } from '@common/middleware/clerkAuth';
+import { clerkMiddleware } from '@common/middleware/clerkAuth';
 import { errorHandler } from '@common/error-handler/errorHandler';
 import { responseInterceptor } from '@common/interceptors/responseInterceptor';
 import { connectDB } from '@config/db';
@@ -98,16 +98,12 @@ app.use(requireApiVersion);
 app.use('/api/v1/webhooks', webhookRouter);
 
 // API routes
-const protectedRoutes = express.Router();
-protectedRoutes.use(requireAuth);
+app.use('/api/v1/apartments', apartmentRouter);
+app.use('/api/v1/units', unitRouter);
+app.use('/api/v1/payments', paymentRouter);
+app.use('/api/v1/issues', issueRouter);
+app.use('/api/v1/users', userRouter);
 
-protectedRoutes.use('/apartments', apartmentRouter);
-protectedRoutes.use('/units', unitRouter);
-protectedRoutes.use('/payments', paymentRouter);
-protectedRoutes.use('/issues', issueRouter);
-protectedRoutes.use('/users', userRouter);
-
-app.use('/api/v1', protectedRoutes);
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(errorHandler);
