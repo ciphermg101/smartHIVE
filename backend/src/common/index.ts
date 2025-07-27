@@ -6,3 +6,4 @@ export * from '@common/guards/rolesGuard';
 export * from '@common/interceptors/responseInterceptor'; 
 export * from '@common/sentry/sentry';
 export * from '@common/webhooks/webhook.controller';
+export * from '@common/cloudinary/cloudinary.controller';

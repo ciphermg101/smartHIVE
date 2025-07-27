@@ -17,6 +17,7 @@ import { userRouter } from '@modules/users';
 import webhookRouter from '@common/webhooks/webhook.controller';
 import { requireApiVersion } from '@common/middleware/requireApiVersion';
 import { config } from '@config/configs';
+import cloudinaryRouter from '@common/cloudinary/cloudinary.controller';
 
 const app = express();
 
@@ -96,6 +97,9 @@ app.use(requireApiVersion);
 
 // Webhook routes
 app.use('/api/v1/webhooks', webhookRouter);
+
+// Cloudinary routes
+app.use('/api/v1/cloudinary', cloudinaryRouter);
 
 // API routes
 app.use('/api/v1/apartments', apartmentRouter);

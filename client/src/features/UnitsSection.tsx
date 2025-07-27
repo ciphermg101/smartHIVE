@@ -34,12 +34,6 @@ const imageUploadConfig = {
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
-const cloudinaryDeleteConfig = {
-  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
-  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
-};
-
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
 
 const unitFormSchema = z.object({
@@ -126,7 +120,7 @@ const UnitsSection: React.FC = () => {
 
         if (unitToDeleteData?.imageUrl) {
           try {
-            await deleteImageFromCloudinary(unitToDeleteData.imageUrl, cloudinaryDeleteConfig);
+            await deleteImageFromCloudinary(unitToDeleteData.imageUrl);
             console.log('Deleted unit image from Cloudinary');
           } catch (deleteError) {
             console.error('Failed to delete unit image from Cloudinary:', deleteError);
@@ -195,7 +189,7 @@ const UnitsSection: React.FC = () => {
 
         if (uploadedImageUrl && originalImageUrl && originalImageUrl !== uploadedImageUrl) {
           try {
-            await deleteImageFromCloudinary(originalImageUrl, cloudinaryDeleteConfig);
+            await deleteImageFromCloudinary(originalImageUrl);
             console.log('Deleted old unit image');
           } catch (deleteError) {
             console.error('Failed to delete old unit image:', deleteError);
@@ -217,7 +211,7 @@ const UnitsSection: React.FC = () => {
 
       if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
         try {
-          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          await deleteImageFromCloudinary(uploadedImageUrl);
           console.log('Cleaned up uploaded image after unit operation failure');
         } catch (deleteError) {
           console.error('Failed to clean up uploaded image:', deleteError);

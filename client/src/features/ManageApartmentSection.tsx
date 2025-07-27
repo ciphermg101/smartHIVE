@@ -18,12 +18,6 @@ const imageUploadConfig = {
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
-const cloudinaryDeleteConfig = {
-  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
-  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
-};
-
 import { type IUserProfile } from '@/interfaces/user.interface';
 import { UserDisplay } from '@components/UserDisplay';
 
@@ -144,7 +138,7 @@ const ManageApartmentSection: React.FC = () => {
 
             if (uploadedImageUrl && originalImageUrl && originalImageUrl !== uploadedImageUrl) {
               try {
-                await deleteImageFromCloudinary(originalImageUrl, cloudinaryDeleteConfig);
+                await deleteImageFromCloudinary(originalImageUrl);
                 console.log('Deleted old apartment image');
               } catch (deleteError) {
                 console.error('Failed to delete old apartment image:', deleteError);
@@ -159,7 +153,7 @@ const ManageApartmentSection: React.FC = () => {
 
             if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
               try {
-                await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+                await deleteImageFromCloudinary(uploadedImageUrl);
                 console.log('Cleaned up uploaded image after apartment update failure');
               } catch (deleteError) {
                 console.error('Failed to clean up uploaded image:', deleteError);
@@ -175,7 +169,7 @@ const ManageApartmentSection: React.FC = () => {
 
       if (uploadedImageUrl && uploadedImageUrl !== originalImageUrl) {
         try {
-          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          await deleteImageFromCloudinary(uploadedImageUrl);
           console.log('Cleaned up uploaded image after unexpected error');
         } catch (deleteError) {
           console.error('Failed to clean up uploaded image:', deleteError);

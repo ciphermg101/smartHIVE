@@ -30,12 +30,6 @@ const imageUploadConfig = {
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
-const cloudinaryDeleteConfig = {
-  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
-  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET,
-};
-
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const setSelectedApartment = useApartmentStore((s) => s.setSelectedApartment);
@@ -146,7 +140,7 @@ export default function OnboardingPage() {
 
             if (uploadedImageUrl) {
               try {
-                await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+                await deleteImageFromCloudinary(uploadedImageUrl);
                 console.log('Cleaned up uploaded image after apartment creation failure');
               } catch (deleteError) {
                 console.error('Failed to clean up uploaded image:', deleteError);
@@ -165,7 +159,7 @@ export default function OnboardingPage() {
       if (uploadedImageUrl) {
 
         try {
-          await deleteImageFromCloudinary(uploadedImageUrl, cloudinaryDeleteConfig);
+          await deleteImageFromCloudinary(uploadedImageUrl);
           console.log('Cleaned up uploaded image after unexpected error');
         } catch (deleteError) {
           console.error('Failed to clean up uploaded image:', deleteError);
