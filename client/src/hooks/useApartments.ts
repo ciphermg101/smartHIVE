@@ -54,7 +54,7 @@ export function useMyApartments() {
   })
 }
 
-export function useApartmenTenants(apartmentId: string) {
+export function useApartmentTenants(apartmentId: string) {
   return useQuery({
     queryKey: ['apartment-tenants', apartmentId],
     queryFn: async () => {

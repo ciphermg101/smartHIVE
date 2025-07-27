@@ -153,7 +153,14 @@ export class ApartmentService {
   static async getApartmentTenants(apartmentId: string) {
     try {
       return await ApartmentProfile.find({ apartmentId })
-        .populate('userId')
+        .populate({
+          path: 'user',
+          select: 'email firstName lastName imageUrl'
+        })  
+        .populate({
+          path: 'unitId',
+          select: 'unitId unitNo'
+        })
         .lean();
     } catch (error: any) {
       throw new AppException(error, error.message, error.status);

@@ -1,19 +1,21 @@
-import { type ClerkUser } from "@/types/clerk";
-
-export type User = ClerkUser & {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  imageUrl: string;
-};
-
-export interface UserProfile extends User {
-  _id: string; // mongodb id
-  userId: string; // Clerk user ID
+export interface IUserProfile {
+  _id: string;                   
+  userId: string;                
+  user?: {                        
+    _id: string;                 
+    email: string;
+    firstName: string;
+    lastName: string;
+    imageUrl?: string;
+  };
   apartmentId: string;
   role: string;
-  unitId?: string;
+  unitId?: {                     
+    _id: string;                 
+    unitNo: string;              
+  };
   dateJoined: string;
   status: string;
+  createdAt?: string;            
+  updatedAt?: string;
 }

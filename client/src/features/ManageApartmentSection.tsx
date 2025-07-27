@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApartmentStore } from '@store/apartment';
-import { useApartment, useApartmenTenants, useInviteApartmentUser, useRemoveApartmentUser, useUpdateApartment } from '@/hooks/useApartments';
+import { useApartment, useApartmentTenants, useInviteApartmentUser, useRemoveApartmentUser, useUpdateApartment } from '@/hooks/useApartments';
 import { useUnits } from '@/hooks/useUnits';
 import { Dialog, DialogContent, DialogTitle } from '@components/ui/dialog';
 import { toast } from 'sonner';
@@ -17,7 +17,7 @@ const imageUploadConfig = {
   uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
 };
 
-import { type UserProfile } from '@/interfaces/user.interface';
+import { type IUserProfile } from '@/interfaces/user.interface';
 import { UserDisplay } from '@components/UserDisplay';
 
 const TABS = [
@@ -34,16 +34,8 @@ const ManageApartmentSection: React.FC = () => {
   const selectedProfile = useApartmentStore((s) => s.selectedProfile);
   const apartmentId = selectedProfile?.profile.apartmentId || '';
   const { data: apartment, isLoading: apartmentLoading, error: apartmentError } = useApartment(apartmentId);
-  const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmenTenants(apartmentId);
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useApartmentTenants(apartmentId);
   const { data: units = [] } = useUnits(apartmentId);
-  
-  const unitMap = React.useMemo(() => {
-    return units.reduce<Record<string, string>>((acc, unit) => {
-      acc[unit._id] = unit.unitNo;
-      return acc;
-    }, {});
-  }, [units]);
-
   const inviteUser = useInviteApartmentUser(apartmentId);
   const removeUser = useRemoveApartmentUser(apartmentId);
   const updateApartment = useUpdateApartment(apartmentId);
@@ -627,13 +619,12 @@ const ManageApartmentSection: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-zinc-700">
-                {users.map((user: UserProfile) => (
-                  <div key={user.id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                {users.map((user: IUserProfile) => (
+                  <div key={user._id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                     <div className="flex items-center justify-between">
                       <UserDisplay 
-                        userId={user._id} 
-                        role={user.role} 
-                        unitName={user.unitId ? unitMap[user.unitId] : undefined}
+                        user={user} 
+                        unitNumber={user.unitId?.unitNo}
                       />
                       <div className="flex items-center space-x-2">
                         <button
@@ -646,7 +637,7 @@ const ManageApartmentSection: React.FC = () => {
                           </svg>
                         </button>
                         <button
-                          onClick={() => confirmRemoveUser(user?.id || '')}
+                          onClick={() => confirmRemoveUser(user.userId)}
                           className="p-1.5 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                           aria-label="Remove member"
                         >
