@@ -291,9 +291,7 @@ export function extractPublicIdFromUrl(imageUrl: string): string | null {
 
 export async function deleteImageFromCloudinary(imageUrl: string): Promise<boolean> {
     try {
-        const response = await api.delete('/cloudinary/delete', {
-            data: { imageUrl },
-        });
+        const response = await api.post('/cloudinary/delete', { imageUrl });
 
         if (!response.data.success) {
             console.error('Failed to delete image:', response.data);
@@ -311,9 +309,7 @@ export async function deleteMultipleImagesFromCloudinary(
     imageUrls: string[]
 ): Promise<{ success: string[]; failed: string[] }> {
     try {
-        const response = await api.delete('/cloudinary/delete-multiple', {
-            data: { imageUrls },
-        });
+        const response = await api.post('/cloudinary/delete-multiple', { imageUrls });
 
         if (!response.data.success) {
             console.error('Failed to delete multiple images:', response.data);
