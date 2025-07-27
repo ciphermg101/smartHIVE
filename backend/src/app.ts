@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { json, urlencoded } from 'express';
-import { clerkMiddleware } from '@clerk/express'
+import { clerkMiddleware, requireAuth } from '@common/middleware/clerkAuth';
 import { errorHandler } from '@common/error-handler/errorHandler';
 import { responseInterceptor } from '@common/interceptors/responseInterceptor';
 import { connectDB } from '@config/db';
@@ -47,7 +47,7 @@ app.use(json());
 app.use(urlencoded({ extended: true }));
 
 // Clerk authentication middleware
-app.use(clerkMiddleware());
+app.use(clerkMiddleware);
 
 // Response interceptor
 app.use(responseInterceptor);
@@ -59,11 +59,14 @@ app.use(requireApiVersion);
 app.use('/api/v1/webhooks', webhookRouter);
 
 // API routes
-app.use('/api/v1/apartments', apartmentRouter);
-app.use('/api/v1/units', unitRouter);
-app.use('/api/v1/payments', paymentRouter);
-app.use('/api/v1/issues', issueRouter);
-app.use('/api/v1/users', userRouter);
+const protectedRoutes = express.Router();
+protectedRoutes.use(requireAuth);
+
+protectedRoutes.use('/api/v1/apartments', apartmentRouter);
+protectedRoutes.use('/api/v1/units', unitRouter);
+protectedRoutes.use('/api/v1/payments', paymentRouter);
+protectedRoutes.use('/api/v1/issues', issueRouter);
+protectedRoutes.use('/api/v1/users', userRouter);
 
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

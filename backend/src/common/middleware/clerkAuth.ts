@@ -1,5 +1,4 @@
-import { clerkMiddleware, requireAuth, getAuth } from '@clerk/express';
+import { clerkMiddleware as clerk, requireAuth, getAuth } from '@clerk/express';
 
-export const clerkAuthMiddleware = clerkMiddleware();
-export const requireAuthMiddleware = requireAuth();
+export const clerkMiddleware = clerk();
 export { requireAuth, getAuth };

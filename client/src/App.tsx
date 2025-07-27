@@ -1,4 +1,3 @@
-// src/App.tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   BrowserRouter,
@@ -10,6 +9,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { ClerkProvider, useUser } from '@clerk/clerk-react'
 import { useUserStore } from '@/store/user'
 import { Toaster } from '@components/ui/sonner'
+import AppInitializer from '@components/AppInitiliazer'
 import { useSyncThemeWithLocalStorage } from '@/hooks/useSyncThemeWithLocalStorage'
 import { ProtectedRoute } from '@components/ProtectedRoute'
 
@@ -67,6 +67,7 @@ function AppWrapper() {
       routerPush={(to) => navigate(to)}
       routerReplace={(to) => navigate(to, { replace: true })}
     >
+      <AppInitializer />
       <InnerApp />
     </ClerkProvider>
   )
