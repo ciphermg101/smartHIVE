@@ -76,7 +76,12 @@ export class ApartmentInviteService {
             password: generatedPassword,
             firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
             lastName: lastName.charAt(0).toUpperCase() + lastName.slice(1),
-            publicMetadata: {},
+            publicMetadata: {
+              needsPasswordReset: true
+            },
+            privateMetadata: {
+              passwordHasBeenReset: false
+            }
           });
           isNewUser = true;
         } catch (clerkError: any) {

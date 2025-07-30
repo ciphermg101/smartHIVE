@@ -1,4 +1,3 @@
-// UserDisplay.tsx
 import React from 'react';
 import type { IUserProfile } from '@/interfaces/user.interface';
 
@@ -11,7 +10,6 @@ export const UserDisplay: React.FC<UserDisplayProps> = ({
   user,
   unitNumber,
 }) => {
-  // Safely handle cases where user or user.user might be null/undefined
   if (!user || !user.user) {
     return (
       <div className="flex items-start space-x-3 w-full">

@@ -3,13 +3,13 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  useNavigate,
+  useNavigate
 } from 'react-router-dom'
 import { Suspense, lazy, useEffect } from 'react'
 import { ClerkProvider, useUser } from '@clerk/clerk-react'
 import { useUserStore } from '@/store/user'
 import { Toaster } from '@components/ui/sonner'
-import AppInitializer from '@components/AppInitiliazer'
+import AppInitializer from '@/components/AppInitiliazer'
 import { useSyncThemeWithLocalStorage } from '@/hooks/useSyncThemeWithLocalStorage'
 import { ProtectedRoute } from '@components/ProtectedRoute'
 
@@ -22,10 +22,12 @@ const Unauthorized = lazy(() => import('@pages/Unauthorized'))
 const Onboarding = lazy(() => import('@pages/Onboarding'))
 const DashboardPage = lazy(() => import('@pages/DashboardPage'))
 const Landing = lazy(() => import('@pages/Landing'))
+const ResetPasswordPage = lazy(() => import('@pages/ResetPasswordPage'))
 
 function InnerApp() {
   const { user, isLoaded } = useUser()
   const setUser = useUserStore((s: any) => s.setUser)
+  const navigate = useNavigate()
 
   useSyncThemeWithLocalStorage()
 
@@ -34,6 +36,15 @@ function InnerApp() {
       setUser(user)
     }
   }, [user, isLoaded, setUser])
+
+  useEffect(() => {
+    const checkPasswordReset = async () => {
+      if (user && user.publicMetadata?.needsPasswordReset) {
+        navigate('/reset-password');
+      }
+    };
+    checkPasswordReset();
+  }, [user, navigate]);
 
   return (
     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
@@ -49,9 +60,16 @@ function InnerApp() {
             <Onboarding />
           </ProtectedRoute>
         } />
+        <Route path="/reset-password" element={
+          <ResetPasswordPage />
+        } />
         <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" />} />
         <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" />} />
-        <Route path="/user" element={<UserProfile />} />
+        <Route path="/user" element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>
     </Suspense>
