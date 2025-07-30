@@ -26,10 +26,9 @@ export default function ResetPasswordPage() {
       try {
         const needsReset = (user.publicMetadata?.needsPasswordReset === true);
         if (!needsReset) {
-          navigate('/dashboard');
+          navigate('/onboarding');
         }
       } catch (err) {
-        console.error('Error checking password reset status:', err);
         toast.error('An error occurred while checking your account status');
       } finally {
         setLoading(false);
@@ -45,33 +44,45 @@ export default function ResetPasswordPage() {
     setFormSubmitting(true);
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       setFormSubmitting(false);
       return;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
+      toast.error('Password must be at least 8 characters long');
       setFormSubmitting(false);
       return;
     }
 
     try {
       await user?.updatePassword({ newPassword });
-
-      await user?.update({
-        unsafeMetadata: {
-          ...user.unsafeMetadata,
-          needsPasswordReset: false,
-        },
-      });
+      if (user) {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            needsPasswordReset: false
+          }
+        });
+        await fetch('/api/update-user-metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            publicMetadata: {
+              needsPasswordReset: false
+            }
+          })
+        });
+      }
 
       toast.success('Password updated successfully. Please sign in again.');
       await signOut();
       navigate('/sign-in');
     } catch (err) {
-      console.error('Error updating password:', err);
-      setError('Failed to update password. Please try again.');
+      toast.error('Failed to update password. Please try again.');
     } finally {
       setFormSubmitting(false);
     }

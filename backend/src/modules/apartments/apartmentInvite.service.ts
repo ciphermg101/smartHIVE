@@ -5,6 +5,7 @@ import { sendInviteEmail } from '@/utils/sendInviteEmail';
 import { v4 as uuidv4 } from 'uuid';
 import { clerkClient } from '@clerk/express';
 import { AppException } from '@common/error-handler/errorHandler';
+import { truncate } from 'fs';
 
 export class ApartmentInviteService {
   static async inviteUser({
@@ -80,7 +81,7 @@ export class ApartmentInviteService {
               needsPasswordReset: true
             },
             privateMetadata: {
-              passwordHasBeenReset: false
+              passwordHasBeenReset: true
             }
           });
           isNewUser = true;
