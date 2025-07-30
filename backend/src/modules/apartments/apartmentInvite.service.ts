@@ -113,7 +113,7 @@ export class ApartmentInviteService {
         apartmentName: apartment.name,
         unitNo: unit?.unitNo,
         role,
-        inviteLink: `${clientOrigin}/accept-invite?token=${profile._id}`,
+        inviteLink: `${clientOrigin}`,
         isNewUser,
         generatedPassword,
       });
