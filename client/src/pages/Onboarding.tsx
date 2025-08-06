@@ -270,7 +270,7 @@ export default function OnboardingPage() {
                   <div className="space-y-2">
                     <div className="text-sm text-blue-600 animate-pulse">
                       {uploadProgress.stage === 'compressing' && "Compressing image for faster upload..."}
-                      {uploadProgress.stage === 'uploading' && "Uploading to Cloudinary..."}
+                      {uploadProgress.stage === 'uploading' && "Uploading Image..."}
                       {uploadProgress.stage === 'complete' && "Upload complete!"}
                     </div>
 

@@ -39,7 +39,7 @@ function InnerApp() {
 
   useEffect(() => {
     const checkPasswordReset = async () => {
-      if (user && user.publicMetadata?.needsPasswordReset) {
+      if (user?.unsafeMetadata?.needsPasswordReset) {
         navigate('/reset-password');
       }
     };
