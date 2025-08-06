@@ -23,7 +23,7 @@ export class ApartmentInviteService {
     invitedBy: string;
     clientOrigin: string;
   }) {
-    let clerkUser: any = null; // Declare clerkUser in the outer scope
+    let clerkUser: any = null;
     
     try {
       if (!email || !email.includes('@')) {
@@ -77,11 +77,9 @@ export class ApartmentInviteService {
             password: generatedPassword,
             firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
             lastName: lastName.charAt(0).toUpperCase() + lastName.slice(1),
-            publicMetadata: {
-              needsPasswordReset: true
-            },
-            privateMetadata: {
-              passwordHasBeenReset: true
+            unsafeMetadata: {
+              needsPasswordReset: true,
+              passwordHasBeenReset: false
             }
           });
           isNewUser = true;

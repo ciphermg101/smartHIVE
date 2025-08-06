@@ -61,7 +61,8 @@ export default function ResetPasswordPage() {
         await user.update({
           unsafeMetadata: {
             ...user.unsafeMetadata,
-            needsPasswordReset: false
+            needsPasswordReset: false,
+            passwordHasBeenReset: true
           }
         });
       }      
