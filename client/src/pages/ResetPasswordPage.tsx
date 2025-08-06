@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
       }
 
       try {
-        const needsReset = (user.publicMetadata?.needsPasswordReset === true);
+        const needsReset = user.unsafeMetadata?.needsPasswordReset === true;
         if (!needsReset) {
           navigate('/onboarding');
         }
@@ -64,19 +64,7 @@ export default function ResetPasswordPage() {
             needsPasswordReset: false
           }
         });
-        await fetch('/api/update-user-metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            publicMetadata: {
-              needsPasswordReset: false
-            }
-          })
-        });
-      }
+      }      
 
       toast.success('Password updated successfully. Please sign in again.');
       await signOut();
