@@ -28,7 +28,8 @@ export function useChatMessages(apartmentId: string) {
       }
 
       const { data } = await api.get(`/chat/${apartmentId}`, { params });
-      return data.data;
+      // Fix: Handle nested data structure
+      return data.data?.data || data.data || data;
     },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => {
@@ -101,23 +102,46 @@ export function useSocket(apartmentId: string) {
         const token = await getToken();
         if (!active || !token || !apartmentId) return;
 
+        // Disconnect existing socket if any
+        if (socketRef.current?.connected) {
+          socketRef.current.disconnect();
+        }
+
         const socket = io(SOCKET_URL, {
           auth: { token },
           path: '/socket.io',
-          transports: ['websocket'],
+          transports: ['websocket', 'polling'],
           query: { apartmentId },
+          forceNew: true,
         });
 
         socket.on('connect', () => {
           console.log('Connected to chat socket');
+          // Join apartment room after connection
+          socket.emit('join-apartment', { apartmentId });
+        });
+
+        socket.on('joined-apartment', (data) => {
+          console.log('Joined apartment:', data.apartmentId);
         });
 
         socket.on('new-message', (message: IMessage) => {
+          console.log('Received new message:', message);
           queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
-            if (!old) return old;
+            if (!old) {
+              return {
+                pages: [{ messages: [message], hasMore: false }],
+                pageParams: [undefined]
+              };
+            }
             
             const firstPage = old.pages[0];
-            if (!firstPage) return old;
+            if (!firstPage) {
+              return {
+                ...old,
+                pages: [{ messages: [message], hasMore: false }]
+              };
+            }
             
             // Check if message already exists
             const messageExists = firstPage.messages.some((m: IMessage) => m._id === message._id);
@@ -166,14 +190,25 @@ export function useSocket(apartmentId: string) {
           });
         });
 
+        socket.on('user-typing', (data) => {
+          // Handle typing indicator
+          console.log('User typing:', data);
+        });
+
+        socket.on('user-stopped-typing', (data) => {
+          // Handle stop typing indicator
+          console.log('User stopped typing:', data);
+        });
+
         socket.on('connect_error', (error) => {
           console.error('Socket connection error:', error);
         });
 
+        socket.on('error', (error) => {
+          console.error('Socket error:', error);
+        });
+
         socketRef.current = socket;
-        return () => {
-          socket.disconnect();
-        };
       } catch (error) {
         console.error('Error setting up socket:', error);
       }
@@ -183,7 +218,11 @@ export function useSocket(apartmentId: string) {
 
     return () => {
       active = false;
-      socketRef.current?.disconnect();
+      if (socketRef.current) {
+        socketRef.current.emit('leave-apartment', { apartmentId });
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
   }, [apartmentId, getToken, queryClient]);
 

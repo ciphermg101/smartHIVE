@@ -3,6 +3,7 @@ import { AppException } from '@common/error-handler/errorHandler';
 import { Types } from 'mongoose';
 
 export class MessageService {
+
   static async createMessage(data: {
     apartmentId: string;
     senderId: string;
@@ -14,10 +15,9 @@ export class MessageService {
     try {
       if (data.replyTo) {
         const originalMessage = await Message.findOne({
-          _id: new Types.ObjectId(data.replyTo),
-          apartmentId: new Types.ObjectId(data.apartmentId),
+          _id: data.replyTo,
+          apartmentId: new Types.ObjectId(data.apartmentId)
         });
-
         if (!originalMessage) {
           throw new AppException('Original message not found in this apartment', 404);
         }
@@ -34,19 +34,14 @@ export class MessageService {
         readBy: [],
       });
 
-      return message;
+      return message.toObject();
     } catch (error: any) {
       if (error instanceof AppException) throw error;
       throw new AppException(error, error.message || 'Failed to send message', error.status);
     }
   }
 
-  static async getRecentMessages(
-    apartmentId: string,
-    userId: string,
-    limit = 50,
-    before?: Date
-  ): Promise<{ messages: IMessage[]; hasMore: boolean }> {
+  static async getRecentMessages(apartmentId: string, userId: string, limit = 50, before?: Date): Promise<{ messages: IMessage[], hasMore: boolean }> {
     try {
       const query: any = { apartmentId: new Types.ObjectId(apartmentId) };
       if (before) query.createdAt = { $lt: before };
@@ -56,15 +51,16 @@ export class MessageService {
         .limit(limit + 1)
         .populate('sender', 'userId role status name avatar')
         .populate('replyMessage')
-        .lean()
-        .exec();
+        .lean();
 
       const hasMore = messages.length > limit;
-      if (hasMore) messages.pop();
+      if (hasMore) {
+        messages.pop();
+      }
 
       return {
-        messages: messages.reverse() as IMessage[],
-        hasMore,
+        messages: messages.reverse(),
+        hasMore
       };
     } catch (error: any) {
       if (error instanceof AppException) throw error;
@@ -77,12 +73,11 @@ export class MessageService {
       const message = await Message.findById(id)
         .populate('sender', 'userId role status')
         .populate('replyMessage')
-        .lean()
-        .exec();
+        .lean();
 
       if (!message) throw new AppException('Message not found', 404);
 
-      return message as IMessage;
+      return message;
     } catch (error: any) {
       if (error instanceof AppException) throw error;
       throw new AppException(error, error.message, error.status);
@@ -91,11 +86,11 @@ export class MessageService {
 
   static async markMessageAsRead(messageId: string, userId: string): Promise<void> {
     try {
-      const message = await Message.findById(messageId).exec();
+      const message = await Message.findById(messageId);
       if (!message) throw new AppException('Message not found', 404);
 
       await Message.updateOne(
-        { _id: messageId, 'readBy.userId': { $ne: new Types.ObjectId(userId) } },
+        { _id: messageId, 'readBy.userId': { $ne: userId } },
         {
           $push: {
             readBy: {
@@ -116,7 +111,7 @@ export class MessageService {
       await Message.updateMany(
         {
           apartmentId: new Types.ObjectId(apartmentId),
-          'readBy.userId': { $ne: new Types.ObjectId(userId) },
+          'readBy.userId': { $ne: userId },
         },
         {
           $push: {
@@ -133,13 +128,9 @@ export class MessageService {
     }
   }
 
-  static async addReaction(
-    messageId: string,
-    userId: string,
-    emoji: string
-  ): Promise<IMessage | null> {
+  static async addReaction(messageId: string, userId: string, emoji: string): Promise<IMessage | null> {
     try {
-      const message = await Message.findById(messageId).exec();
+      const message = await Message.findById(messageId);
       if (!message) throw new AppException('Message not found', 404);
 
       const updatedMessage = await Message.findByIdAndUpdate(
@@ -154,11 +145,9 @@ export class MessageService {
           },
         },
         { new: true }
-      )
-        .lean()
-        .exec();
+      ).lean();
 
-      return updatedMessage as IMessage;
+      return updatedMessage;
     } catch (error: any) {
       if (error instanceof AppException) throw error;
       throw new AppException(error, error.message || 'Failed to react to message', error.status);
@@ -167,10 +156,10 @@ export class MessageService {
 
   static async deleteMessage(messageId: string, userId: string): Promise<boolean> {
     try {
-      const message = await Message.findById(messageId).exec();
+      const message = await Message.findById(messageId);
       if (!message) throw new AppException('Message not found', 404);
 
-      const result = await Message.findByIdAndDelete(messageId).exec();
+      const result = await Message.findByIdAndDelete(messageId);
       return !!result;
     } catch (error: any) {
       if (error instanceof AppException) throw error;
@@ -178,15 +167,9 @@ export class MessageService {
     }
   }
 
-  static async listReactions(
-    messageId: string,
-    userId: string
-  ): Promise<IMessage['reactions']> {
+  static async listReactions(messageId: string, userId: string) {
     try {
-      const message = await Message.findById(messageId, 'reactions apartmentId')
-        .lean()
-        .exec();
-
+      const message = await Message.findById(messageId, 'reactions apartmentId').lean();
       if (!message) throw new AppException('Message not found', 404);
 
       return message.reactions;
@@ -200,7 +183,7 @@ export class MessageService {
     try {
       const count = await Message.countDocuments({
         apartmentId: new Types.ObjectId(apartmentId),
-        'readBy.userId': { $ne: new Types.ObjectId(userId) },
+        'readBy.userId': { $ne: userId }
       });
 
       return count;

@@ -24,13 +24,16 @@ export interface ReactToMessagePayload {
 }
 
 export function initializeSocket(io: Server, socket: AuthenticatedSocket): void {
-  const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
   
   if (!token) {
+    console.log('No token provided for socket connection');
     socket.emit('error', { message: 'Authentication required' });
     socket.disconnect();
     return;
   }
+  
+  console.log('Socket connected with token:', token.substring(0, 20) + '...');
 
   socket.on('join-apartment', async (payload: JoinRoomPayload) => {
     try {

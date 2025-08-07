@@ -14,13 +14,58 @@ export default function ChatSection() {
   const user = useUserStore((state) => state.user);
   const selectedProfile = useApartmentStore((state) => state.selectedProfile);
   const [message, setMessage] = useState('');
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   const apartmentId = selectedProfile?.profile.apartmentId;
-  const { data, isLoading } = useChatMessages(apartmentId || '');
+  const { data, isLoading, error } = useChatMessages(apartmentId || '');
   const { mutate: sendMessage, isPending: isSending } = useSendMessage(apartmentId || '');
+  const socket = useSocket(apartmentId || '');
 
   const messages: IMessage[] = data?.messages ?? [];
+
+  // Handle typing indicators
+  useEffect(() => {
+    if (!socket.current) return;
+
+    const handleUserTyping = (data: { senderId: string }) => {
+      if (data.senderId !== user?.id) {
+        setTypingUsers(prev => [...new Set([...prev, data.senderId])]);
+      }
+    };
+
+    const handleUserStoppedTyping = (data: { senderId: string }) => {
+      setTypingUsers(prev => prev.filter(id => id !== data.senderId));
+    };
+
+    socket.current.on('user-typing', handleUserTyping);
+    socket.current.on('user-stopped-typing', handleUserStoppedTyping);
+
+    return () => {
+      socket.current?.off('user-typing', handleUserTyping);
+      socket.current?.off('user-stopped-typing', handleUserStoppedTyping);
+    };
+  }, [socket, user?.id]);
+
+  // Handle typing events
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value);
+    
+    if (socket.current && apartmentId) {
+      socket.current.emit('typing-start', { apartmentId });
+      
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.current?.emit('typing-stop', { apartmentId });
+      }, 1000);
+    }
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +81,14 @@ export default function ChatSection() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -108,6 +161,10 @@ export default function ChatSection() {
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-destructive">Error loading messages. Please try again.</p>
+            </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
@@ -127,6 +184,21 @@ export default function ChatSection() {
               />
             ))
           )}
+          
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex items-center space-x-2 px-3 py-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
+              </span>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
@@ -150,7 +222,7 @@ export default function ChatSection() {
               placeholder="Type a message..."
               className="pr-12"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleInputChange}
             />
             <Button 
               type="button" 
