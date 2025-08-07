@@ -10,6 +10,7 @@ export interface IMessageReaction {
 }
 
 export interface IMessage extends Document {
+  _id: Types.ObjectId;
   apartmentId: Types.ObjectId;
   senderId: Types.ObjectId;
   content: string;

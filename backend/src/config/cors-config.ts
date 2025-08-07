@@ -1,7 +1,7 @@
 import { config } from '@config/configs';
 
 const isDev = config.env === 'development';
-const allowedOrigins: string[] = config.allowedOrigins
+export const allowedOrigins: string[] = config.allowedOrigins
   ? config.allowedOrigins.split(',').map((origin) => origin.trim())
   : [];
 
