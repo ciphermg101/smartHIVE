@@ -134,7 +134,7 @@ export function useSocket(apartmentId: string) {
                 pageParams: [undefined]
               };
             }
-            
+
             const firstPage = old.pages[0];
             if (!firstPage) {
               return {
@@ -142,17 +142,17 @@ export function useSocket(apartmentId: string) {
                 pages: [{ messages: [message], hasMore: false }]
               };
             }
-            
+
             // Check if message already exists
             const messageExists = firstPage.messages.some((m: IMessage) => m._id === message._id);
             if (messageExists) return old;
-            
+
             // Add message to first page
             const newFirstPage = {
               ...firstPage,
               messages: [...firstPage.messages, message]
             };
-            
+
             return {
               ...old,
               pages: [newFirstPage, ...old.pages.slice(1)]
@@ -163,12 +163,12 @@ export function useSocket(apartmentId: string) {
         socket.on('message-updated', (updatedMessage: IMessage) => {
           queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
             if (!old) return old;
-            
+
             return {
               ...old,
               pages: old.pages.map((page: any) => ({
                 ...page,
-                messages: page.messages.map((msg: IMessage) => 
+                messages: page.messages.map((msg: IMessage) =>
                   msg._id === updatedMessage._id ? updatedMessage : msg
                 )
               }))
@@ -179,7 +179,7 @@ export function useSocket(apartmentId: string) {
         socket.on('message-deleted', (messageId: string) => {
           queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
             if (!old) return old;
-            
+
             return {
               ...old,
               pages: old.pages.map((page: any) => ({

@@ -33,6 +33,8 @@ export function initializeSocket(io: Server, socket: AuthenticatedSocket): void 
     return;
   }
   
+  // TODO: Verify JWT token and extract senderId
+  // For now, we'll need to get senderId from auth middleware
   console.log('Socket connected with token:', token.substring(0, 20) + '...');
 
   socket.on('join-apartment', async (payload: JoinRoomPayload) => {

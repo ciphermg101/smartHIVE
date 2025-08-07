@@ -141,7 +141,7 @@ router.post(
 );
 
 router.post(
-  '/:apartmentId/read-all',
+  '/:apartmentId/mark-all-read',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker', 'tenant'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {

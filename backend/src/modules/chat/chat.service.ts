@@ -90,7 +90,7 @@ export class MessageService {
       if (!message) throw new AppException('Message not found', 404);
 
       await Message.updateOne(
-        { _id: messageId, 'readBy.userId': { $ne: userId } },
+        { _id: messageId, 'readBy.userId': { $ne: new Types.ObjectId(userId) } },
         {
           $push: {
             readBy: {
@@ -111,7 +111,7 @@ export class MessageService {
       await Message.updateMany(
         {
           apartmentId: new Types.ObjectId(apartmentId),
-          'readBy.userId': { $ne: userId },
+          'readBy.userId': { $ne: new Types.ObjectId(userId) },
         },
         {
           $push: {
@@ -183,7 +183,7 @@ export class MessageService {
     try {
       const count = await Message.countDocuments({
         apartmentId: new Types.ObjectId(apartmentId),
-        'readBy.userId': { $ne: userId }
+        'readBy.userId': { $ne: new Types.ObjectId(userId) }
       });
 
       return count;

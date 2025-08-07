@@ -27,7 +27,7 @@ export default function ChatSection() {
 
   // Handle typing indicators
   useEffect(() => {
-    if (!socket.current) return;
+    if (!socket.current || !socket.current.connected) return;
 
     const handleUserTyping = (data: { senderId: string }) => {
       if (data.senderId !== user?.id) {
@@ -43,16 +43,18 @@ export default function ChatSection() {
     socket.current.on('user-stopped-typing', handleUserStoppedTyping);
 
     return () => {
-      socket.current?.off('user-typing', handleUserTyping);
-      socket.current?.off('user-stopped-typing', handleUserStoppedTyping);
+      if (socket.current) {
+        socket.current.off('user-typing', handleUserTyping);
+        socket.current.off('user-stopped-typing', handleUserStoppedTyping);
+      }
     };
-  }, [socket, user?.id]);
+  }, [socket.current?.connected, user?.id]);
 
   // Handle typing events
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     
-    if (socket.current && apartmentId) {
+    if (socket.current && socket.current.connected && apartmentId) {
       socket.current.emit('typing-start', { apartmentId });
       
       // Clear previous timeout
@@ -62,7 +64,9 @@ export default function ChatSection() {
       
       // Set new timeout to stop typing
       typingTimeoutRef.current = setTimeout(() => {
-        socket.current?.emit('typing-stop', { apartmentId });
+        if (socket.current && socket.current.connected) {
+          socket.current.emit('typing-stop', { apartmentId });
+        }
       }, 1000);
     }
   };
