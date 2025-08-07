@@ -220,7 +220,7 @@ export function useSocket(apartmentId: string) {
       active = false;
       if (socketRef.current) {
         socketRef.current.emit('leave-apartment', { apartmentId });
-        socketRef.current.disconnect();
+        socket.current.disconnect();
         socketRef.current = null;
       }
     };

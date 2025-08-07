@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
 
-const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+import React from 'react';
+import { Button } from '@components/ui/button';
+import { cn } from '@lib/utils';
 
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void;
@@ -8,41 +9,50 @@ interface EmojiPickerProps {
   position: { x: number; y: number };
 }
 
-export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose, position }) => {
-  const pickerRef = useRef<HTMLDivElement>(null);
+const COMMON_EMOJIS = [
+  '👍', '👎', '❤️', '😊', '😂', '😮', '😢', '😡',
+  '🎉', '🔥', '✨', '💯', '👏', '🙏', '💪', '🤝'
+];
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
-
+export const EmojiPicker: React.FC<EmojiPickerProps> = ({
+  onSelect,
+  onClose,
+  position
+}) => {
   return (
-    <div
-      ref={pickerRef}
-      className="absolute z-50 bg-background border rounded-lg shadow-lg p-2 flex gap-1"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-      }}
-    >
-      {emojis.map((emoji) => (
-        <button
-          key={emoji}
-          className="text-2xl hover:scale-125 transition-transform p-1"
-          onClick={() => {
-            onSelect(emoji);
-            onClose();
-          }}
-        >
-          {emoji}
-        </button>
-      ))}
-    </div>
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 z-40 bg-transparent" 
+        onClick={onClose}
+      />
+      
+      {/* Emoji Picker */}
+      <div 
+        className={cn(
+          "fixed z-50 bg-popover border rounded-lg shadow-lg p-3",
+          "grid grid-cols-8 gap-1 w-64"
+        )}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
+      >
+        {COMMON_EMOJIS.map((emoji) => (
+          <Button
+            key={emoji}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-lg hover:bg-accent"
+            onClick={() => {
+              onSelect(emoji);
+              onClose();
+            }}
+          >
+            {emoji}
+          </Button>
+        ))}
+      </div>
+    </>
   );
 };

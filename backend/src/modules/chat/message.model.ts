@@ -9,17 +9,29 @@ export interface IMessageReaction {
   createdAt: Date;
 }
 
+export interface IMessageRead {
+  userId: Types.ObjectId;
+  readAt: Date;
+}
+
 export interface IMessage extends Document {
+  _id: Types.ObjectId;
   apartmentId: Types.ObjectId;
   senderId: Types.ObjectId;
+  sender?: {
+    _id: Types.ObjectId;
+    userId: string;
+    role: string;
+    status: string;
+    name?: string;
+    avatar?: string;
+  };
   content: string;
-  type: MessageType;
-  status: MessageStatus;
-  readBy: Array<{
-    userId: Types.ObjectId;
-    readAt: Date;
-  }>;
+  type: 'text' | 'image' | 'file' | 'system';
+  status: 'sent' | 'delivered' | 'read';
+  readBy: IMessageRead[];
   replyTo?: Types.ObjectId;
+  replyMessage?: IMessage;
   reactions: IMessageReaction[];
   metadata?: Record<string, any>;
   createdAt: Date;
@@ -98,4 +110,4 @@ messageSchema.virtual('replyMessage', {
   justOne: true
 });
 
-export const Message = model<IMessage>('Message', messageSchema); 
+export const Message = model<IMessage>('Message', messageSchema);

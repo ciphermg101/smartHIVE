@@ -37,7 +37,7 @@ router.post(
         ...req.body,
         senderId: apartmentProfileId,
       });
-      
+
       res.status(201).json({ success: true, data: message });
     } catch (err) {
       next(err);
@@ -54,11 +54,11 @@ router.get(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { apartmentId } = req.params;
-  
+
       const { before, limit } = (req as any).validatedQuery || {};
-      
+
       const limitNumber = limit ? Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100) : 50;
-      
+
       let beforeDate: Date | undefined;
       if (before) {
         const parsedDate = new Date(before);
@@ -66,14 +66,14 @@ router.get(
           beforeDate = parsedDate;
         }
       }
-      
+
       const result = await MessageService.getRecentMessages(
         apartmentId,
         apartmentProfileId,
         limitNumber, 
         beforeDate
       );
-      
+
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);
@@ -89,9 +89,9 @@ router.get(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { apartmentId } = req.params;
-      
+
       const count = await MessageService.getUnreadCount(apartmentId, apartmentProfileId);
-      
+
       res.json({ success: true, data: { unreadCount: count } });
     } catch (err) {
       next(err);
@@ -106,11 +106,11 @@ router.get(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { messageId } = req.params;
-      
+
       if (!messageId) {
         return res.status(400).json({ success: false, message: 'Message ID is required' });
       }
-      
+
       const fullMessage = await MessageService.getMessageById(messageId, apartmentProfileId);
       res.json({ success: true, data: fullMessage });
     } catch (err) {
@@ -127,11 +127,11 @@ router.post(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { messageId } = req.params;
-      
+
       if (!messageId) {
         return res.status(400).json({ success: false, message: 'Message ID is required' });
       }
-      
+
       await MessageService.markMessageAsRead(messageId, apartmentProfileId);
       res.json({ success: true, message: 'Message marked as read' });
     } catch (err) {
@@ -148,11 +148,11 @@ router.post(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { apartmentId } = req.params;
-      
+
       if (!apartmentId) {
         return res.status(400).json({ success: false, message: 'Apartment ID is required' });
       }
-      
+
       await MessageService.bulkMarkAsRead(apartmentId, apartmentProfileId);
       res.json({ success: true, message: 'All messages marked as read' });
     } catch (err) {
@@ -170,17 +170,17 @@ router.post(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { messageId } = req.params;
-      
+
       if (!messageId) {
         return res.status(400).json({ success: false, message: 'Message ID is required' });
       }
-      
+
       const updatedMessage = await MessageService.addReaction(
         messageId, 
         apartmentProfileId, 
         req.body.emoji
       );
-      
+
       res.json({ success: true, data: updatedMessage });
     } catch (err) {
       next(err);
@@ -196,13 +196,13 @@ router.get(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { messageId } = req.params;
-      
+
       if (!messageId) {
         return res.status(400).json({ success: false, message: 'Message ID is required' });
       }
-      
+
       const reactions = await MessageService.listReactions(messageId, apartmentProfileId);
-      
+
       res.json({ success: true, data: reactions });
     } catch (err) {
       next(err);
@@ -218,11 +218,11 @@ router.delete(
     try {
       const apartmentProfileId = (req as any).apartmentProfileId;
       const { messageId } = req.params;
-      
+
       if (!messageId) {
         return res.status(400).json({ success: false, message: 'Message ID is required' });
       }
-      
+
       await MessageService.deleteMessage(messageId, apartmentProfileId);
       res.status(204).json({ success: true, message: 'Message deleted' });
     } catch (err) {

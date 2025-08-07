@@ -12,6 +12,7 @@ interface ChatInputProps {
   replyingTo?: IMessage | null;
   onCancelReply: () => void;
   onFileUpload?: (file: File) => Promise<string>;
+  onTyping?: () => void;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   replyingTo,
   onCancelReply,
   onFileUpload,
+  onTyping,
   className,
 }) => {
   const [message, setMessage] = useState('');
@@ -142,7 +144,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             placeholder="Type a message..."
             className="pr-12"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              onTyping?.();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
