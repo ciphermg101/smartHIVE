@@ -113,6 +113,8 @@ export function rolesGuard(options: RolesGuardOptions) {
         }
       }
 
+      (req as any).apartmentProfileId = profile._id.toString();
+
       return next();
     } catch (err) {
       console.error('rolesGuard caught error:', err);

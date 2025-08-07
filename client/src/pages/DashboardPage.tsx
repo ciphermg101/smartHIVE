@@ -16,6 +16,7 @@ import {
   Bell,
   User,
   Building,
+  MessageCircle,
 } from "lucide-react";
 import { ThemeToggle } from "@components/ui/ThemeToggle";
 import smartHiveLogo from "@/assets/smartHIVE-logo.png";
@@ -27,7 +28,8 @@ import TenantsSection from "@features/TenantsSection";
 import UnitsSection from "@features/UnitsSection";
 import PaymentsSection from "@features/PaymentsSection";
 import IssuesSection from "@features/IssuesSection";
-import type { ApartmentWithProfile } from "@/interfaces/apartments";
+import ChatSection from "@features/ChatSection";
+import type { ApartmentWithProfile } from "@interfaces/apartments";
 
 const navItems = [
   { label: "Overview", icon: Home, badge: null },
@@ -35,6 +37,7 @@ const navItems = [
   { label: "Tenants", icon: Users, badge: "28" },
   { label: "Issues", icon: AlertCircle, badge: "3" },
   { label: "Payments", icon: DollarSign, badge: null },
+  { label: "Chat", icon: MessageCircle, badge: "2" },
   { label: "Settings", icon: Settings, badge: null },
 ];
 
@@ -277,12 +280,14 @@ export default function DashboardPage() {
           {activeNav === "Units" && <UnitsSection />}
           {activeNav === "Payments" && <PaymentsSection />}
           {activeNav === "Issues" && <IssuesSection />}
+          {activeNav === "Chat" && <ChatSection />}
           {activeNav !== "Overview" &&
             activeNav !== "Manage Apartment" &&
             activeNav !== "Tenants" &&
             activeNav !== "Units" &&
             activeNav !== "Payments" &&
-            activeNav !== "Issues" && (
+            activeNav !== "Issues" &&
+            activeNav !== "Chat" && (
               <div className="bg-card dark:bg-zinc-900 rounded-xl shadow-sm border border-border p-8 text-center">
                 <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <FileText className="w-8 h-8 text-muted-foreground" />

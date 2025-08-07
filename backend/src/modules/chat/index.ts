@@ -1,2 +1,2 @@
 export * from '@modules/chat/message.model';
-export { registerChatHandlers } from '@modules/chat/chat.gateway'; 
+export { default as chatRouter } from '@modules/chat/chat.controller'; 

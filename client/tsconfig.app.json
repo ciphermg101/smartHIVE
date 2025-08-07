@@ -36,7 +36,7 @@
       "@pages/*": ["./src/pages/*"],
       "@features/*": ["./src/features/*"],
       "@assets/*": ["./src/assets/*"],
-      "@interfaces/*": ["interfaces/*"],
+      "@interfaces/*": ["./src/interfaces/*"],
       "@utils/*": ["./src/utils/*"]
     },
   },

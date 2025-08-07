@@ -16,8 +16,9 @@ import { issueRouter } from '@modules/issues';
 import { userRouter } from '@modules/users';
 import webhookRouter from '@common/webhooks/webhook.controller';
 import { requireApiVersion } from '@common/middleware/requireApiVersion';
-import { config } from '@config/configs';
 import cloudinaryRouter from '@common/cloudinary/cloudinary.controller';
+import { chatRouter } from '@modules/chat';
+import { corsConfig } from '@config/cors-config';
 
 const app = express();
 
@@ -26,51 +27,7 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
-const allowedOrigins: string[] = [];
-
-if (config.allowedOrigins) {
-  allowedOrigins.push(
-    ...config.allowedOrigins.split(',').map((origin) => origin.trim())
-  );
-}
-
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
-    if (!origin || config.env === 'development') {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.warn(`Blocked by CORS: ${origin}`);
-      return callback(new Error(`Not allowed by CORS: ${origin}`), false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-CSRF-Token',
-    'X-Requested-With',
-    'Accept',
-    'Accept-Version',
-    'Content-Length',
-    'Content-MD5',
-    'Date',
-    'X-Api-Version'
-  ],
-  exposedHeaders: [
-    'Authorization',
-    'X-Country',
-    'Clerk-Cookie',
-    'Clerk-Db-Jwt'
-  ]
-};
-
-app.use(cors(corsOptions));
+app.use(cors(corsConfig));
 
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -107,6 +64,7 @@ app.use('/api/v1/units', unitRouter);
 app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/issues', issueRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/chat', chatRouter);
 
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

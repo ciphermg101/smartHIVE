@@ -14,9 +14,20 @@ export function zodValidate<T = any, Q extends ParsedQs = ParsedQs, P extends Pa
 ) {
   return (req: Request<P, any, T, Q>, res: Response, next: NextFunction) => {
     try {
-      if (schemas.body) req.body = schemas.body.parse(req.body);
-      if (schemas.query) req.query = schemas.query.parse(req.query);
-      if (schemas.params) req.params = schemas.params.parse(req.params);
+      if (schemas.body) {
+        req.body = schemas.body.parse(req.body);
+      }
+      
+      if (schemas.query) {
+        const parsedQuery = schemas.query.parse(req.query);
+        (req as any).validatedQuery = parsedQuery;
+      }
+      
+      if (schemas.params) {
+        const parsedParams = schemas.params.parse(req.params);
+        (req as any).validatedParams = parsedParams;
+      }
+      
       next();
     } catch (err) {
       if (err instanceof ZodError) {

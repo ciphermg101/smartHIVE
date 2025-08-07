@@ -1,24 +1,28 @@
 import http from 'http';
 import app from '@/app';
-import { Server as SocketIOServer } from 'socket.io';
-import { registerChatHandlers } from '@modules/chat';
 import { config } from '@config/configs';
+import { socketCorsOptions } from '@config/cors-config';
+import { Server as SocketIOServer } from 'socket.io';
+import { initializeSocket, AuthenticatedSocket } from '@modules/chat/socket/socket.handler';
 
 const PORT = config.port;
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
-  cors: {
-    origin: config.clientOrigin,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  },
+  cors: socketCorsOptions,
+  path: '/socket.io/',
+  serveClient: false,
+  transports: ['websocket', 'polling']
 });
 
-// Enable real-time chat with Clerk authentication
-registerChatHandlers(io);
+io.on('connection', (socket: AuthenticatedSocket) => {
+  initializeSocket(io, socket);
+  socket.on('disconnect', () => { });
+});
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-}); 
+});
+
+export { io };
+export default server;
