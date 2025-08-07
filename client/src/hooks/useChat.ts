@@ -89,7 +89,7 @@ export function useReactToMessage() {
   });
 }
 
-export function useSocket(apartmentId: string) {
+export function useSocket(apartmentId: string, apartmentProfileId?: string) {
   const { getToken } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
@@ -111,7 +111,10 @@ export function useSocket(apartmentId: string) {
           auth: { token },
           path: '/socket.io',
           transports: ['websocket', 'polling'],
-          query: { apartmentId },
+          query: { 
+            apartmentId,
+            senderId: apartmentProfileId
+          },
           forceNew: true,
         });
 
@@ -220,18 +223,18 @@ export function useSocket(apartmentId: string) {
       active = false;
       if (socketRef.current) {
         socketRef.current.emit('leave-apartment', { apartmentId });
-        socket.current.disconnect();
+        socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, [apartmentId, getToken, queryClient]);
+  }, [apartmentId, apartmentProfileId, getToken, queryClient]);
 
   return socketRef;
 }
 
-export function useSendMessage(apartmentId: string) {
+export function useSendMessage(apartmentId: string, apartmentProfileId?: string) {
   // We'll keep the socket connection active through the socket provider
-  useSocket(apartmentId);
+  useSocket(apartmentId, apartmentProfileId);
 
   const sendMessage = useCallback(async (params: Omit<SendMessageParams, 'apartmentId'>) => {
     if (!apartmentId) {

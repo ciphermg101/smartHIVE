@@ -120,7 +120,7 @@ router.get(
 );
 
 router.post(
-  '/:messageId/read',
+  '/message/:messageId/read',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker', 'tenant'], resourceType: 'apartment' }),
   async (req: Request, res: Response, next: NextFunction) => {
@@ -162,7 +162,7 @@ router.post(
 );
 
 router.post(
-  '/:messageId/react',
+  '/message/:messageId/react',
   authGuard,
   rolesGuard({ roles: ['owner', 'caretaker', 'tenant'], resourceType: 'apartment' }),
   zodValidate({ body: reactSchema }),

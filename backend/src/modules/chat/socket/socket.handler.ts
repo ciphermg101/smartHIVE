@@ -33,9 +33,23 @@ export function initializeSocket(io: Server, socket: AuthenticatedSocket): void 
     return;
   }
   
-  // TODO: Verify JWT token and extract senderId
-  // For now, we'll need to get senderId from auth middleware
-  console.log('Socket connected with token:', token.substring(0, 20) + '...');
+  try {
+    // Extract senderId from query params or auth token
+    const senderId = socket.handshake.query.senderId as string;
+    if (!senderId) {
+      socket.emit('error', { message: 'User ID required' });
+      socket.disconnect();
+      return;
+    }
+    
+    socket.senderId = senderId;
+    console.log('Socket connected for user:', senderId);
+  } catch (error) {
+    console.error('Socket authentication error:', error);
+    socket.emit('error', { message: 'Authentication failed' });
+    socket.disconnect();
+    return;
+  }
 
   socket.on('join-apartment', async (payload: JoinRoomPayload) => {
     try {

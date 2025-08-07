@@ -23,12 +23,13 @@ export default function ChatSection() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const apartmentId = selectedProfile?.profile.apartmentId;
+  const apartmentProfileId = selectedProfile?.profile._id;
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useChatMessages(apartmentId || '');
-  const { mutate: sendMessage, isPending: isSending } = useSendMessage(apartmentId || '');
-  const { mutate: markAsRead } = useMarkAsRead(apartmentId || '');
+  const { mutate: sendMessage, isPending: isSending } = useSendMessage(apartmentId || '', apartmentProfileId);
+  const { mutate: markAsRead } = useMarkAsRead();
   const { data: unreadCount } = useUnreadCount(apartmentId || '');
   const { mutate: reactToMessage } = useReactToMessage();
-  const socket = useSocket(apartmentId || '');
+  const socket = useSocket(apartmentId || '', apartmentProfileId);
 
   const messages: IMessage[] = data?.messages || [];
 
@@ -37,7 +38,7 @@ export default function ChatSection() {
     if (!socket.current || !socket.current.connected) return;
 
     const handleUserTyping = (data: { senderId: string }) => {
-      if (data.senderId !== user?.id) {
+      if (data.senderId !== apartmentProfileId) {
         setTypingUsers(prev => [...new Set([...prev, data.senderId])]);
       }
     };
@@ -55,7 +56,7 @@ export default function ChatSection() {
         socket.current.off('user-stopped-typing', handleUserStoppedTyping);
       }
     };
-  }, [socket.current?.connected, user?.id]);
+  }, [socket.current?.connected, apartmentProfileId]);
 
   // Handle typing events
   const handleTyping = () => {
@@ -217,10 +218,10 @@ export default function ChatSection() {
                   <MessageBubble
                     key={msg._id}
                     message={msg}
-                    isCurrentUser={msg.senderId === user?.id}
+                    isCurrentUser={msg.senderId === apartmentProfileId}
                     onReply={handleReply}
                     onReact={handleReact}
-                    currentUserId={user?.id}
+                    currentUserId={apartmentProfileId}
                   />
                 ))}
 
