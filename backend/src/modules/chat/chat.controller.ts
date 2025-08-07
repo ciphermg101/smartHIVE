@@ -4,6 +4,7 @@ import { authGuard } from '@common/guards/authGuard';
 import { rolesGuard } from '@common/guards/rolesGuard';
 import { zodValidate } from '@utils/zodValidate';
 import { MessageService } from '@modules/chat/chat.service';
+import { User } from '@modules/users/user.model';
 
 const router = Router();
 
@@ -70,7 +71,7 @@ router.get(
       const result = await MessageService.getRecentMessages(
         apartmentId,
         apartmentProfileId,
-        limitNumber, 
+        limitNumber,
         beforeDate
       );
 
@@ -176,8 +177,8 @@ router.post(
       }
 
       const updatedMessage = await MessageService.addReaction(
-        messageId, 
-        apartmentProfileId, 
+        messageId,
+        apartmentProfileId,
         req.body.emoji
       );
 

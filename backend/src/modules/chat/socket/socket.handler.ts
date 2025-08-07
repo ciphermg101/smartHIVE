@@ -24,32 +24,16 @@ export interface ReactToMessagePayload {
 }
 
 export function initializeSocket(io: Server, socket: AuthenticatedSocket): void {
-  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-  
-  if (!token) {
-    console.log('No token provided for socket connection');
+  // Authentication is already handled by clerkAuthSocket middleware
+  // The senderId should be set by the middleware
+  if (!socket.senderId) {
+    console.log('No senderId found on socket - authentication may have failed');
     socket.emit('error', { message: 'Authentication required' });
     socket.disconnect();
     return;
   }
   
-  try {
-    // Extract senderId from query params or auth token
-    const senderId = socket.handshake.query.senderId as string;
-    if (!senderId) {
-      socket.emit('error', { message: 'User ID required' });
-      socket.disconnect();
-      return;
-    }
-    
-    socket.senderId = senderId;
-    console.log('Socket connected for user:', senderId);
-  } catch (error) {
-    console.error('Socket authentication error:', error);
-    socket.emit('error', { message: 'Authentication failed' });
-    socket.disconnect();
-    return;
-  }
+  console.log('Socket connected for user:', socket.senderId);
 
   socket.on('join-apartment', async (payload: JoinRoomPayload) => {
     try {

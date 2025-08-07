@@ -28,8 +28,13 @@ export function useChatMessages(apartmentId: string) {
       }
 
       const { data } = await api.get(`/chat/${apartmentId}`, { params });
-      // Fix: Handle nested data structure
-      return data.data?.data || data.data || data;
+      // Handle the response structure from the backend
+      const responseData = data.data || data;
+      return {
+        messages: responseData.messages || responseData || [],
+        hasMore: responseData.hasMore || false,
+        total: responseData.total || 0
+      };
     },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => {
@@ -113,7 +118,7 @@ export function useSocket(apartmentId: string, apartmentProfileId?: string) {
           transports: ['websocket', 'polling'],
           query: { 
             apartmentId,
-            senderId: apartmentProfileId
+            ...(apartmentProfileId && { senderId: apartmentProfileId })
           },
           forceNew: true,
         });
