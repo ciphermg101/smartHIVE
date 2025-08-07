@@ -67,14 +67,14 @@ router.get(
         }
       }
       
-      const messages = await MessageService.getRecentMessages(
+      const result = await MessageService.getRecentMessages(
         apartmentId,
         apartmentProfileId,
         limitNumber, 
         beforeDate
       );
       
-      res.json({ success: true, data: messages });
+      res.json({ success: true, data: result });
     } catch (err) {
       next(err);
     }

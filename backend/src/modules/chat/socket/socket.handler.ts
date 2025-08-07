@@ -80,9 +80,12 @@ export function initializeSocket(io: Server, socket: AuthenticatedSocket): void 
         senderId: socket.senderId || ''
       });
 
+      // Populate the message before sending
+      const populatedMessage = await MessageService.getMessageById(message._id.toString(), socket.senderId || '');
+      
       const roomName = `apartment:${payload.apartmentId}`;
       
-      io.to(roomName).emit('new-message', message);
+      io.to(roomName).emit('new-message', populatedMessage);
       
     } catch (error: any) {
       socket.emit('error', { message: error.message || 'Failed to send message' });

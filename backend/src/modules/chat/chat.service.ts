@@ -41,17 +41,27 @@ export class MessageService {
     }
   }
 
-  static async getRecentMessages(apartmentId: string, userId: string, limit = 50, before?: Date): Promise<IMessage[]> {
+  static async getRecentMessages(apartmentId: string, userId: string, limit = 50, before?: Date): Promise<{ messages: IMessage[], hasMore: boolean }> {
     try {
       const query: any = { apartmentId: new Types.ObjectId(apartmentId) };
       if (before) query.createdAt = { $lt: before };
 
-      return await Message.find(query)
+      const messages = await Message.find(query)
         .sort({ createdAt: -1 })
-        .limit(limit)
-        .populate('sender', 'userId role status')
+        .limit(limit + 1)
+        .populate('sender', 'userId role status name avatar')
         .populate('replyMessage')
         .lean();
+
+      const hasMore = messages.length > limit;
+      if (hasMore) {
+        messages.pop();
+      }
+
+      return {
+        messages: messages.reverse(),
+        hasMore
+      };
     } catch (error: any) {
       if (error instanceof AppException) throw error;
       throw new AppException(error, error.message || 'Failed to fetch messages', error.status);

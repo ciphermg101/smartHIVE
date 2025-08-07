@@ -20,7 +20,7 @@ export default function ChatSection() {
   const { data, isLoading } = useChatMessages(apartmentId || '');
   const { mutate: sendMessage, isPending: isSending } = useSendMessage(apartmentId || '');
 
-  const messages: IMessage[] = data?.pages?.flatMap(page => page.messages) ?? [];
+  const messages: IMessage[] = data?.messages ?? [];
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

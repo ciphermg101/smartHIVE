@@ -28,15 +28,22 @@ export function useChatMessages(apartmentId: string) {
       }
 
       const { data } = await api.get(`/chat/${apartmentId}`, { params });
-      return data.data || [];
+      return data.data;
     },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => {
-      if (!lastPage || lastPage.length < MESSAGES_PER_PAGE) return undefined;
-      return new Date(lastPage[lastPage.length - 1].createdAt);
+      if (!lastPage?.hasMore) return undefined;
+      const messages = lastPage.messages;
+      if (!messages || messages.length === 0) return undefined;
+      return new Date(messages[0].createdAt);
     },
     enabled: !!apartmentId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    select: (data) => ({
+      pages: data.pages,
+      pageParams: data.pageParams,
+      messages: data.pages.flatMap(page => page.messages || [])
+    }),
   });
 }
 
@@ -105,23 +112,58 @@ export function useSocket(apartmentId: string) {
           console.log('Connected to chat socket');
         });
 
-        socket.on('newMessage', (message: IMessage) => {
-          queryClient.setQueryData<IMessage[]>(['chatMessages', apartmentId], (old = []) => {
-            if (old.some(m => m._id === message._id)) return old;
-            return [...old, message];
+        socket.on('new-message', (message: IMessage) => {
+          queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
+            if (!old) return old;
+            
+            const firstPage = old.pages[0];
+            if (!firstPage) return old;
+            
+            // Check if message already exists
+            const messageExists = firstPage.messages.some((m: IMessage) => m._id === message._id);
+            if (messageExists) return old;
+            
+            // Add message to first page
+            const newFirstPage = {
+              ...firstPage,
+              messages: [...firstPage.messages, message]
+            };
+            
+            return {
+              ...old,
+              pages: [newFirstPage, ...old.pages.slice(1)]
+            };
           });
         });
 
-        socket.on('messageUpdated', (updatedMessage: IMessage) => {
-          queryClient.setQueryData<IMessage[]>(['chatMessages', apartmentId], (old = []) =>
-            old.map(msg => msg._id === updatedMessage._id ? updatedMessage : msg)
-          );
+        socket.on('message-updated', (updatedMessage: IMessage) => {
+          queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
+            if (!old) return old;
+            
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                messages: page.messages.map((msg: IMessage) => 
+                  msg._id === updatedMessage._id ? updatedMessage : msg
+                )
+              }))
+            };
+          });
         });
 
-        socket.on('messageDeleted', (messageId: string) => {
-          queryClient.setQueryData<IMessage[]>(['chatMessages', apartmentId], (old = []) =>
-            old.filter(msg => msg._id !== messageId)
-          );
+        socket.on('message-deleted', (messageId: string) => {
+          queryClient.setQueryData(['chatMessages', apartmentId], (old: any) => {
+            if (!old) return old;
+            
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                messages: page.messages.filter((msg: IMessage) => msg._id !== messageId)
+              }))
+            };
+          });
         });
 
         socket.on('connect_error', (error) => {

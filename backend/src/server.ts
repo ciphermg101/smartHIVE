@@ -1,11 +1,13 @@
 import http from 'http';
-import app from '@/app';
+import app from './app';
 import { config } from '@config/configs';
 import { socketCorsOptions } from '@config/cors-config';
 import { Server as SocketIOServer } from 'socket.io';
 import { initializeSocket, AuthenticatedSocket } from '@modules/chat/socket/socket.handler';
+import { connectDB } from '@config/db';
 
-const PORT = config.port;
+const PORT = process.env.PORT || 5000;
+
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
@@ -20,8 +22,10 @@ io.on('connection', (socket: AuthenticatedSocket) => {
   socket.on('disconnect', () => { });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+connectDB().then(() => {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 });
 
 export { io };
