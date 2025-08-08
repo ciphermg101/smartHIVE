@@ -524,7 +524,7 @@ const UnitsSection: React.FC = () => {
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
                       {uploadProgress.stage === 'compressing' && 'Compressing image...'}
-                      {uploadProgress.stage === 'uploading' && `Uploading to Cloudinary... ${Math.round(uploadProgress.progress)}%`}
+                      {uploadProgress.stage === 'uploading' && `Uploading Image... ${Math.round(uploadProgress.progress)}%`}
                       {uploadProgress.stage === 'complete' && 'Upload complete!'}
                     </p>
                   </div>

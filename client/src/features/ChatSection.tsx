@@ -1,7 +1,4 @@
-` tags.
-
-<replit_final_file>
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useUserStore } from '@store/user';
 import { useApartmentStore } from '@store/apartment';
 import { MessageCircle, Users, Hash } from 'lucide-react';
@@ -10,51 +7,64 @@ import { Button } from '@components/ui/button';
 import { ChatHeader } from '@components/chat/ChatHeader';
 import { ChatInput } from '@components/chat/ChatInput';
 import { MessageBubble } from '@components/chat/MessageBubble';
-import { useChatMessages, useSendMessage, useSocket, useMarkAsRead, useUnreadCount, useReactToMessage } from '@hooks/useChat';
+import { useChatMessages, useSendMessage, useSocket, useMarkAllAsRead, useUnreadCount, useReactToMessage } from '@hooks/useChat';
 import type { IMessage } from '@interfaces/chat';
+import { toast } from 'sonner';
+import { Socket } from 'socket.io-client';
 
 export default function ChatSection() {
   const user = useUserStore((state) => state.user);
   const selectedProfile = useApartmentStore((state) => state.selectedProfile);
   const [replyingTo, setReplyingTo] = useState<IMessage | null>(null);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const apartmentId = selectedProfile?.profile.apartmentId;
   const apartmentProfileId = selectedProfile?.profile._id;
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useChatMessages(apartmentId || '');
   const { mutate: sendMessage, isPending: isSending } = useSendMessage(apartmentId || '', apartmentProfileId);
-  const { mutate: markAsRead } = useMarkAsRead();
+  const { mutate: markAllAsRead } = useMarkAllAsRead();
   const { data: unreadCount } = useUnreadCount(apartmentId || '');
   const { mutate: reactToMessage } = useReactToMessage();
   const socket = useSocket(apartmentId || '', apartmentProfileId);
 
   const messages: IMessage[] = data?.messages || [];
 
-  // Handle typing indicators
   useEffect(() => {
-    if (!socket.current || !socket.current.connected) return;
+    socketRef.current = socket.current;
+    if (!socketRef.current?.connected) return;
 
-    const handleUserTyping = (data: { senderId: string }) => {
+    const handleUserTyping = (data: { senderId: string; senderName: string }) => {
       if (data.senderId !== apartmentProfileId) {
-        setTypingUsers(prev => [...new Set([...prev, data.senderId])]);
+        setTypingUsers(prev => new Set(prev).add(data.senderId));
       }
     };
 
     const handleUserStoppedTyping = (data: { senderId: string }) => {
-      setTypingUsers(prev => prev.filter(id => id !== data.senderId));
+      setTypingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(data.senderId);
+        return newSet;
+      });
     };
 
-    socket.current.on('user-typing', handleUserTyping);
-    socket.current.on('user-stopped-typing', handleUserStoppedTyping);
+    const handleConnectError = (error: Error) => {
+      console.error('Socket connection error:', error);
+      toast.error('Connection error. Trying to reconnect...');
+    };
+
+    const currentSocket = socketRef.current;
+    currentSocket.on('user-typing', handleUserTyping);
+    currentSocket.on('user-stopped-typing', handleUserStoppedTyping);
+    currentSocket.on('connect_error', handleConnectError);
 
     return () => {
-      if (socket.current) {
-        socket.current.off('user-typing', handleUserTyping);
-        socket.current.off('user-stopped-typing', handleUserStoppedTyping);
-      }
+      currentSocket.off('user-typing', handleUserTyping);
+      currentSocket.off('user-stopped-typing', handleUserStoppedTyping);
+      currentSocket.off('connect_error', handleConnectError);
     };
   }, [socket.current?.connected, apartmentProfileId]);
 
@@ -85,13 +95,13 @@ export default function ChatSection() {
   };
 
   const handleReact = (messageId: string, emoji: string) => {
-    if (apartmentId) {
-      reactToMessage({ messageId, emoji, apartmentId });
-    }
+    reactToMessage({ messageId, emoji });
   };
 
   const handleMarkAsRead = () => {
-    markAsRead();
+    if (apartmentId) {
+      markAllAsRead(apartmentId);
+    }
   };
 
   const handleLoadMore = () => {
@@ -100,10 +110,18 @@ export default function ChatSection() {
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom('auto');
+    }
+  }, [messages, scrollToBottom]);
+
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
@@ -111,10 +129,6 @@ export default function ChatSection() {
       }
     };
   }, []);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   if (!apartmentId || !selectedProfile) {
     return (
@@ -132,16 +146,16 @@ export default function ChatSection() {
     );
   }
 
-  // Mock participants for now - in real app, fetch from backend
-  const participants = [
+  // Memoize participants to prevent unnecessary re-renders
+  const participants = useMemo(() => [
     {
       id: user?.id || '',
-      name: user?.name || 'You',
-      avatar: user?.avatar,
+      name: user?.fullName || user?.username || 'You',
+      avatar: user?.imageUrl,
       role: 'tenant',
       isOnline: true
     }
-  ];
+  ], [user?.id, user?.fullName, user?.username, user?.imageUrl]);
 
   return (
     <div className="flex flex-col h-full bg-card rounded-xl border shadow-sm overflow-hidden">
@@ -182,11 +196,17 @@ export default function ChatSection() {
 
             {/* Loading State */}
             {isLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="flex items-center space-x-2">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-muted-foreground">Loading messages...</span>
-                </div>
+              <div className="space-y-4 p-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-start space-x-3 animate-pulse">
+                    <div className="h-9 w-9 rounded-full bg-muted/50" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-1/3 rounded bg-muted/50" />
+                      <div className="h-4 w-full rounded bg-muted/50" />
+                      <div className="h-4 w-2/3 rounded bg-muted/50" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="flex items-center justify-center h-32">
@@ -226,7 +246,7 @@ export default function ChatSection() {
                 ))}
 
                 {/* Typing Indicator */}
-                {typingUsers.length > 0 && (
+                {typingUsers.size > 0 && (
                   <div className="flex items-center space-x-3 px-4 py-2 animate-pulse">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -234,7 +254,7 @@ export default function ChatSection() {
                       <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
+                      {typingUsers.size === 1 ? 'Someone is typing...' : `${typingUsers.size} people are typing...`}
                     </span>
                   </div>
                 )}
