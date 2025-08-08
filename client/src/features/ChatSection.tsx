@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { useUserStore } from '@store/user';
 import { useApartmentStore } from '@store/apartment';
-import { MessageCircle, Users, Hash } from 'lucide-react';
+import { MessageCircle, Users, Hash, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@components/ui/scroll-area';
 import { Button } from '@components/ui/button';
 import { ChatHeader } from '@components/chat/ChatHeader';
@@ -12,7 +13,49 @@ import type { IMessage } from '@interfaces/chat';
 import { toast } from 'sonner';
 import { Socket } from 'socket.io-client';
 
-export default function ChatSection() {
+class ChatErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Chat Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+          <h3 className="text-lg font-medium mb-2">Something went wrong</h3>
+          <p className="text-muted-foreground mb-4">
+            We couldn't load the chat. Please try refreshing the page.
+          </p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Refresh Chat
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default function ChatSectionWithBoundary() {
+  return (
+    <ChatErrorBoundary>
+      <ChatSection />
+    </ChatErrorBoundary>
+  );
+}
+
+const ChatSection = (): React.ReactElement => {
   const user = useUserStore((state) => state.user);
   const selectedProfile = useApartmentStore((state) => state.selectedProfile);
   const [replyingTo, setReplyingTo] = useState<IMessage | null>(null);

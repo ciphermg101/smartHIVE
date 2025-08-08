@@ -1,8 +1,25 @@
 # smartHIVE
 
+![Landing Page](./client/src/assets/Readme%20Images/landing-page.png)
+
+> **Landing Page** - First impression of smartHIVE with key features and call-to-action
+
 A modern, modular, and scalable apartment management platform for landlords, property managers, and tenants. smartHIVE streamlines property operations, tenant communication, financial tracking, and maintenance, all in one AI-powered platform.
 
 ---
+
+## 🔑 Authentication
+
+![Sign Up Page](./client/src/assets/Readme%20Images/sign-up-page.png)
+> **Sign Up** - Create your account to get started
+
+![Login Page](./client/src/assets/Readme%20Images/login-page.png)
+> **Login** - Secure access to your smartHIVE account
+
+## 🎯 Onboarding
+
+![Onboarding Page](./client/src/assets/Readme%20Images/onboarding-page.png)
+> **Onboarding** - Set up your property and preferences
 
 ## 🚀 Features
 - **Property Management:** Manage multiple properties and units from a single dashboard.
@@ -32,6 +49,32 @@ A modern, modular, and scalable apartment management platform for landlords, pro
 ```
 
 ---
+## 🏠 Dashboard & Property Management
+
+![Dashboard Light Mode](./client/src/assets/Readme%20Images/dashboard-light-mode.png)
+> **Dashboard Overview** - Get a quick snapshot of your properties
+
+![Dashboard Collapsed Sidepane](./client/src/assets/Readme%20Images/dashboard-collapsed-sidepane.png)
+> **Collapsed Navigation** - More screen space for your content
+
+![Dashboard Open Pane](./client/src/assets/Readme%20Images/dashboard-open-pane.png)
+> **Expanded Navigation** - Quick access to all features
+
+![Manage Apartment Page](./client/src/assets/Readme%20Images/manage-apartment-page.png)
+> **Apartment Management** - View and manage your properties
+
+![Edit Apartment Modal](./client/src/assets/Readme%20Images/edit-aparment-modal.png)
+> **Edit Property** - Update property details with ease
+
+![Units Page](./client/src/assets/Readme%20Images/units-page.png)
+> **Unit Management** - Manage individual units and their details
+
+![Manage Tenants Tab](./client/src/assets/Readme%20Images/manage-tenants-tab.png)
+> **Tenant Management** - Keep track of all your tenants in one place
+
+![Chat Page](./client/src/assets/Readme%20Images/chat-page.png)
+> **Real-time Chat** - Communicate instantly with tenants and team members
+
 ## 🌐 Frontend (client)
 
 - **Pages:** Landing, Onboarding, Dashboard, Apartments, SignIn, SignUp, Unauthorized, UserProfile

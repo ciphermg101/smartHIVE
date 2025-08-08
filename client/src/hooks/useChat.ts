@@ -112,7 +112,7 @@ export function useSocket(apartmentId: string, apartmentProfileId?: string) {
           socketRef.current.disconnect();
         }
 
-        const socket = io(SOCKET_URL, {
+        const socket = io(`${SOCKET_URL}/chat`, {
           auth: { token },
           path: '/socket.io',
           transports: ['websocket', 'polling'],

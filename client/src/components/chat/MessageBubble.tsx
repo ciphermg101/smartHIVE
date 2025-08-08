@@ -109,7 +109,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground',
                 'justify-end space-x-1'
               )}>
-                <span>{format(new Date(message.createdAt), 'h:mm a')}</span>
+                <span>{
+                  message.createdAt ? 
+                    format(new Date(message.createdAt), 'h:mm a') : 
+                    'Just now'
+                }</span>
                 {isCurrentUser && (
                   <span className={cn(
                     'opacity-0 group-hover:opacity-100 transition-opacity',
