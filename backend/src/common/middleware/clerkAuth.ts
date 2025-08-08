@@ -36,7 +36,7 @@ export const clerkAuthSocket = async (socket: Socket, next: (err?: ExtendedError
       }
 
       (socket as any).userId = user._id;
-      (socket as any).senderId = user._id.toString();
+      (socket as any).senderId = user._id;
       (socket as any).clerkUserId = session.userId;
       next();
     } catch (err) {
