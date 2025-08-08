@@ -154,7 +154,6 @@ ISC
 ## 📄 Demo and Pitch Deck
 
 - Pitch Deck: https://gamma.app/docs/smartHIVE-The-Future-of-Property-Management-vncohcoedfn98vv
-- Demo Video: https://gamma.app/docs/smartHIVE-The-Future-of-Property-Management-vncohcoedfn98vv
 
 ---
 
