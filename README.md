@@ -1,6 +1,6 @@
 # smartHIVE
 
-## 🌐 Live Demo
+## 🌐 Deployed URLs
 ### **Frontend:** [https://smart-hive-three.vercel.app](https://smart-hive-three.vercel.app)  
 ### **Backend API Docs:** [https://smarthive-q699.onrender.com/api/v1/docs](https://smarthive-q699.onrender.com/api/v1/docs)
 
@@ -104,7 +104,7 @@ ISC
 
 ---
 
-## 📄 Demo and Pitch Deck
+## 📄 Pitch Deck
 - **Pitch Deck:** [https://gamma.app/docs/smartHIVE-The-Future-of-Property-Management-vncohcoedfn98vv](https://gamma.app/docs/smartHIVE-The-Future-of-Property-Management-vncohcoedfn98vv)
 
 ---
